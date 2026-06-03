@@ -1,0 +1,10 @@
+# run: conda env create --file environment.yml
+name: tinyVV
+channels:
+  - conda-forge
+dependencies:
+- python=3.12
+- pip=25.1
+- pip:
+  - dash_ag_grid<=35.2
+  - polars<=1.31
