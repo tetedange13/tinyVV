@@ -35,7 +35,7 @@ python main.py examples/INPUT_hg19_annovar_MPA.parquet
 # Open URL in browser: http://127.0.0.1:8050/
 ```
 
-## The real deal (FIXME)
+## The real deal
 `tinyVV` main goal was to support interpretation of whole-genome VCF without pagination. Following steps will let you try its power with a public VCF containing millions of variants !
 
 ```

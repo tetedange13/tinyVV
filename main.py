@@ -129,22 +129,36 @@ app = Dash()
 
 DATA_SOURCE = pl.scan_parquet(sys.argv[1])
 
+all_cols = DATA_SOURCE.collect_schema().names()
+#print(all_cols)  # DEBUG
+
+# Find genotype columns by their name:
+GT_cols = []
+for a_col in all_cols:
+    if a_col.startswith('format_') and a_col.endswith('_GT'):
+        GT_cols.append(a_col)
+
 wanted_cols = [
     'chromosome',
     'position',
-    'format_B00GMSH_GT',
-    'format_B00GMSI_GT',
-    'format_B00GMSJ_GT',
-    'info_gnomAD_exome_ALL',
-    'info_gnomAD_exome_AFR'
-    ]
-all_cols = DATA_SOURCE.collect_schema().names()
+    'reference',
+    'alternate'
+]
+wanted_cols += GT_cols
+wanted_cols += [ c for c in all_cols if c.startswith('info_')]
+
+# FUTURE: Tooltip pop_freq:
+#'tooltipValueGetter': {"function": "params.data.athlete + ' was ' + params.data.age + ' in ' + params.value"},
+# wanted_cols += [
+#     'info_gnomAD_exome_ALL',
+#     'info_gnomAD_exome_AFR'
+#     ]
+
 DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
-print(DATA_SOURCE.head().collect())
-#print(all_cols) ; exit()
+# Bellow is a kind of assert (FAIL if selected wrong cols):
+DATA_SOURCE.head().collect()
 
 columnDefs=[{"field": i} for i in wanted_cols]
-
 
 # Color GT cols:
 def colorize_GT():
@@ -168,18 +182,13 @@ def colorize_GT():
     return style_dict
 
 for a_col in columnDefs:
-    if a_col['field'].endswith('_GT'):
+    if a_col in GT_cols:
         a_col['cellStyle'] = colorize_GT()
-#print(columnDefs) ; exit()
-
-# Tooltip pop_freq:
-#'tooltipValueGetter': {"function": "params.data.athlete + ' was ' + params.data.age + ' in ' + params.value"},
-
+#print(columnDefs) ; exit()  # DEBUG
 
 # Count total rows:
 # MEMO: Select 1st col speed up operation
 #total_rows = DATA_SOURCE.select('chromosome').with_row_index().last().select('index').collect().item()
-
 
 app.layout = html.Div(
     [
@@ -203,8 +212,6 @@ app.layout = html.Div(
     ],
     style={"margin": 20},
 )
-
-
 
 @app.callback(
    Output("infinite-grid", "getRowsResponse"),
