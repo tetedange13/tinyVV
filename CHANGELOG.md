@@ -1,0 +1,28 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Implem tooltips for pop_freq
+- Add a column selector ?
+- Let user select parquet file through page
+- Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
+- Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
+- Find a way to avoid hard-written column names ("config.yaml" ?)
+
+### Fixed
+- "Real deal" section of README now works
+
+## [0.1.0] - 2026-06-03
+
+### Added
+
+- Infinite scroll + polars backend works on million rows (tested on NIST's HG002 benchmark VCF)
+- Filter on columns + cumulative filters (AND logic only)
+- Colored genotypes colums
