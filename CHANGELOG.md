@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<br>
+
 ## [Unreleased]
 
 ### Added
@@ -16,8 +18,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
 - Find a way to avoid hard-written column names ("config.yaml" ?)
 
+<br>
+
+## [0.1.1] - 2026-06.03
+
+### Changed
+
+- Auto-detect GT columns by their name
+- Show all INFO columns by default (from their name too)
+
 ### Fixed
-- "Real deal" section of README now works
+
+- `The real deal` section of README now works
+
+<br>
 
 ## [0.1.0] - 2026-06-03
 
