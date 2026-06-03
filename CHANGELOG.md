@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
 - Find a way to avoid hard-written column names ("config.yaml" ?)
 
+### Fixed
+- "Real deal" section of README now works
+
 ## [0.1.0] - 2026-06-03
 
 ### Added
