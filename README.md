@@ -30,7 +30,7 @@ vcf2parquet \
 
 Then start app and open it your favorite Web browser:
 ```
-python main.py examples/INPUT_hg19_annovar_MPA.parquet
+python -m tinyvv examples/INPUT_hg19_annovar_MPA.parquet
 
 # Open URL in browser: http://127.0.0.1:8050/
 ```
@@ -56,7 +56,7 @@ vcf2parquet \
     -o WGS_splitted.parquet
 
 # Explore it with tinyVV:
-python main.py WGS_splitted.parquet
+python -m tinyvv WGS_splitted.parquet
 ```
 
 ## Limitations

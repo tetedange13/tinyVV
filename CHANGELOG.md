@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [0.1.2] - 2026-06.04
+
+### Changed
+
+- Nothing concreat, only project structure (packaging + split functions)
+
+<br>
+
 ## [0.1.1] - 2026-06.03
 
 ### Changed
