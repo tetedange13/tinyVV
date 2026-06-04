@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
 - Find a way to avoid hard-written column names ("config.yaml" ?)
+- 'chr:pos:ref:alt' col + clickable MD link
 
 <br>
 
