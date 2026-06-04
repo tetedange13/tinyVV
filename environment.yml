@@ -11,3 +11,4 @@ dependencies:
 - pip:
   - dash_ag_grid<=35.2
   - polars<=1.31
+  - pyyaml  # Do NOT specify version
