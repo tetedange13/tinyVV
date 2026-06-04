@@ -62,8 +62,7 @@ python -m tinyvv WGS_splitted.parquet
 ## Limitations
 - Parquet input should be provided as command-line argument
 - Only 1 parquet file supported at once
-- Input VCF should be splitted for multi-allelic variants (eg: `bcftools norm -m -any`), otherwise filter on "ALT" column is broken (`polars` error on using a list of str)
-- Many many things hard-written in `main.py`
+- Multiple columns are of type `list[str]` which fails most 'text' filters (Polars error: `expected String type, got: list[str]`)
 
 ## Credits
 - Parts of the code were taken from this blog post : https://plotly.com/blog/polars-to-build-fast-dash-apps-for-large-datasets/

@@ -2,6 +2,8 @@ import dash_ag_grid as dag
 from dash import Dash, Input, Output, dcc, html, no_update, callback
 import polars as pl
 import sys
+import os.path as osp
+import yaml
 
 
 def parse_column_filter(filter_obj, col_name):
@@ -150,11 +152,20 @@ def main():
                 ldf = ldf.filter(filter_query)
         return ldf
 
-    app = Dash()
 
-    DATA_SOURCE = pl.scan_parquet(sys.argv[1])
+    in_parquet_path = sys.argv[1]
+    root_path = osp.splitext(in_parquet_path)[0]
+    attached_yaml = root_path + '.yaml'
+    if osp.isfile(attached_yaml):
+        with open(attached_yaml, 'r') as conf_file:
+            conf = yaml.safe_load(conf_file)
+    else:
+        print("WARN: No sample.yaml found near sample.parquet")
 
-    all_cols = DATA_SOURCE.collect_schema().names()
+    DATA_SOURCE = pl.scan_parquet(in_parquet_path)
+
+    full_schema = DATA_SOURCE.collect_schema()
+    all_cols = full_schema.names()
     #print(all_cols)  # DEBUG
 
     # Find genotype columns by their name:
@@ -174,14 +185,24 @@ def main():
 
     # FUTURE: Tooltip pop_freq:
     #'tooltipValueGetter': {"function": "params.data.athlete + ' was ' + params.data.age + ' in ' + params.value"},
-    # wanted_cols += [
-    #     'info_gnomAD_exome_ALL',
-    #     'info_gnomAD_exome_AFR'
-    #     ]
 
-    DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
+    # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
+    #       -> Have to use '.list.join' + '.cast' to have proper sort
+    # WARN2: Cast works only for int score
+    if 'sort' in conf.keys():
+        # If dtype = list[str]:
+        # join then cast
+        DATA_SOURCE = DATA_SOURCE.with_columns(
+            pl.col(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
+        ).sort(by=conf['sort'][0], descending=conf['sort'][1]
+        ).select(wanted_cols)
+        # else: just sort
+
+    else:
+        DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
+
     # Bellow is a kind of assert (FAIL if selected wrong cols):
-    DATA_SOURCE.head().collect()
+    print(DATA_SOURCE.head().collect())
 
     columnDefs=[{"field": i} for i in wanted_cols]
 
@@ -189,11 +210,13 @@ def main():
     for a_col in columnDefs:
         if a_col['field'] in GT_cols:
             a_col['cellStyle'] = colorize_GT()
-    #print(columnDefs) ; exit()  # DEBUG
+    #print(columnDefs)  # DEBUG
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation
     #total_rows = DATA_SOURCE.select('chromosome').with_row_index().last().select('index').collect().item()
+
+    app = Dash()
 
     app.layout = html.Div(
         [

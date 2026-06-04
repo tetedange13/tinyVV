@@ -21,7 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
-## [0.1.2] - 2026-06.04
+## [0.2.0] - 2026-XX-XX
+
+### Added
+
+- Support companion YAML for configuration (auto-detect "sample.yaml" near "sample.parquet")
+- Allow to sort on a column (columns not sortable otherwise)
+
+<br>
+
+## [0.1.2] - 2026-06-04
 
 ### Changed
 
@@ -29,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
-## [0.1.1] - 2026-06.03
+## [0.1.1] - 2026-06-03
 
 ### Changed
 
