@@ -5,9 +5,10 @@ import polars as pl
 import sys
 import os.path as osp
 import yaml
+import json
 # LOCAL imports
 from .filtering import parse_column_filter, make_filter_expr_list
-from .styling import colorize_GT
+from .styling import colorize_GT, aggKey_to_func
 logger = logging.getLogger(__name__)
 
 
@@ -45,6 +46,8 @@ def main():
         logging.info("Found 'sample.yaml' -> loading conf")
         with open(attached_yaml, 'r') as conf_file:
             conf = yaml.safe_load(conf_file)
+        logging.debug(json.dumps(conf, indent=2))
+
     else:
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
 
@@ -70,7 +73,6 @@ def main():
     wanted_cols += [ c for c in all_cols if c.startswith('info_')]
 
     # FUTURE: Tooltip pop_freq:
-    #'tooltipValueGetter': {"function": "params.data.athlete + ' was ' + params.data.age + ' in ' + params.value"},
 
     # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
     #       -> Have to use '.list.join' + '.cast' to have proper sort
@@ -100,7 +102,15 @@ def main():
     for a_col in columnDefs:
         if a_col['field'] in GT_cols:
             a_col['cellStyle'] = colorize_GT()
-    logger.debug(columnDefs)
+
+    # Add tooltips:
+    if 'agg_in_tooltip' in conf.keys():
+        for a_col in columnDefs:
+            if a_col['field'] in conf['agg_in_tooltip'].keys():
+                a_col['tooltipValueGetter'] = dict(function = aggKey_to_func(conf['agg_in_tooltip'], a_col['field']))
+
+    logger.debug(print(json.dumps(columnDefs, indent=2)))
+    #exit()
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation

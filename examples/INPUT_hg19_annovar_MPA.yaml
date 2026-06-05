@@ -2,3 +2,6 @@ sort:
   - info_MPA_ranking
   - False
 
+agg_in_tooltip:
+  position:
+    - info_gnomAD_exome_AFR

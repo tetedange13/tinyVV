@@ -17,3 +17,10 @@ def colorize_GT():
             ]
 
     return style_dict
+
+
+def aggKey_to_func (a_dict, a_key):
+    # Turn agg_in_tooltips to tooltipValueGetter function as bellow
+    #Example: 'tooltipValueGetter': {"function": "params.data.athlete + ' was ' + params.data.age + ' in ' + params.value"}
+    sub_list = [f"'{x} = ' + params.data.{x}" for x in a_dict[a_key]]
+    return "".join(sub_list)
