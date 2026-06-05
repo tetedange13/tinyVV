@@ -42,27 +42,25 @@ python -m tinyvv examples/INPUT_hg19_annovar_MPA.parquet
 # Download NIST's benchmark VCF for HG001:
 wget https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv4.2.1/GRCh37/HG001_GRCh37_1_22_v4.2.1_benchmark.vcf.gz
 
-# Split multi-allelic variants first:
-bcftools norm -m -any -Oz -o WGS_splitted.vcf.gz HG001_GRCh37_1_22_v4.2.1_benchmark.vcf.gz
-
 # Count variants:
-bcftools +counts WGS_splitted.vcf.gz
+bcftools +counts HG001_GRCh37_1_22_v4.2.1_benchmark.vcf.gz
 # -> Expected: ~ 3.9 millions variants
 
 # Convert to parquet:
 vcf2parquet \
-    -i WGS_splitted.vcf.gz \
+    -i HG001_GRCh37_1_22_v4.2.1_benchmark.vcf.gz \
     convert \
-    -o WGS_splitted.parquet
+    -o HG001_GRCh37_1_22_v4.2.1_benchmark.parquet
 
 # Explore it with tinyVV:
-python -m tinyvv WGS_splitted.parquet
+python -m tinyvv HG001_GRCh37_1_22_v4.2.1_benchmark.parquet
 ```
 
-## Limitations
+## Limitations / Known issues
 - Parquet input should be provided as command-line argument
 - Only 1 parquet file supported at once
 - Multiple columns are of type `list[str]` which fails most 'text' filters (Polars error: `expected String type, got: list[str]`)
+- Sorting by a column is possible through config, but better sort your parquet beforehand (heavy in memory for large datasets)
 
 ## Credits
 - Parts of the code were taken from this blog post : https://plotly.com/blog/polars-to-build-fast-dash-apps-for-large-datasets/
