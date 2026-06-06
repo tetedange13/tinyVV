@@ -5,3 +5,4 @@ sort:
 agg_in_tooltip:
   position:
     - info_gnomAD_exome_AFR
+    - info_gnomAD_exome_AMR
