@@ -5,10 +5,10 @@ channels:
   - bioconda
 
 dependencies:
-- python=3.12
-- pip=25.1
-- bioconda::vcf2parquet=0.5
-- pip:
-  - dash_ag_grid<=35.2
-  - polars<=1.31
-  - pyyaml  # Do NOT specify version
+  - python=3.12
+  - pip=25.1
+  - bioconda::vcf2parquet=0.5
+  - pip:
+    - dash_ag_grid<=35.2
+    - polars<=1.31
+    - pyyaml  # Do NOT specify version
