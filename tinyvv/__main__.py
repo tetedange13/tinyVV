@@ -104,13 +104,17 @@ def main():
             a_col['cellStyle'] = colorize_GT()
 
     # Add tooltips:
+    ## Write 1st line of JS file describing custom tooltip:
+    with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as tooltip_file:
+        tooltip_file.write("var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});\n\n")
+    ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
     if 'agg_in_tooltip' in conf.keys():
         for a_col in columnDefs:
             if a_col['field'] in conf['agg_in_tooltip'].keys():
-                a_col['tooltipValueGetter'] = dict(function = aggKey_to_func(conf['agg_in_tooltip'], a_col['field']))
+                a_col["tooltipField"] = a_col['field']  # Mandatory
+                a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col['field'])
 
     logger.debug(print(json.dumps(columnDefs, indent=2)))
-    #exit()
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation
@@ -125,7 +129,10 @@ def main():
                 id="infinite-grid",
                 style={"height": 600, "width": "100%"},
                 columnDefs=columnDefs,
-                defaultColDef={"sortable": False, "filter": True},
+                defaultColDef={
+                    "sortable": False,
+                    "filter": True,
+                },
                 rowModelType="infinite",
                 dashGridOptions={
                     # The number of rows rendered outside the viewable area the grid renders.
@@ -133,6 +140,7 @@ def main():
                     # How many blocks to keep in the store. Default is no limit, so every requested block is kept.
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
+                    "tooltipShowDelay": 0,
                 },
             ),
             dcc.Store(id="filter-model"),
