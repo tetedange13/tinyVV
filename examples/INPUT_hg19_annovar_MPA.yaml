@@ -7,4 +7,4 @@ agg_in_tooltip:
     - info_gnomAD_exome_AFR
     - info_gnomAD_exome_AMR
   reference:
-    - position
+    - chromosome

@@ -109,10 +109,14 @@ def main():
         tooltip_file.write("var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});\n\n")
     ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
     if 'agg_in_tooltip' in conf.keys():
+        to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
         for a_col in columnDefs:
             if a_col['field'] in conf['agg_in_tooltip'].keys():
                 a_col["tooltipField"] = a_col['field']  # Mandatory
                 a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col['field'])
+            # Hide columns whose data are in tooltip:
+            if a_col['field'] in to_hide:
+                a_col["hide"] = True
 
         logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
 
