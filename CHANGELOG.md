@@ -23,20 +23,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implem tooltips for pop_freq
-- Add a column selector ?
+- Add a column selector ? Maybe through "sample.yaml" ?
 - Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
 - 'chr:pos:ref:alt' col + clickable MobiDetails link
 
 <br>
 
-## [0.2.0] - 2026-XX-XX
+## [0.2.0] - 2026-06-08
 
 ### Added
 
 - Support companion YAML for configuration (auto-detect "sample.yaml" near "sample.parquet")
 - Allow to sort on a column (columns not sortable otherwise)
+- Allow to define columns showing a tooltip, with data from other columns (eg: pop_freq)
 
 ### Fixed
 

@@ -5,11 +5,19 @@ Tiny but powerful variants viewer. Powered by [Dash AG Grid](https://dash.plotly
 Very early stage, should not be used
 
 ## Features
-- Read VCF converted in parquet by `vcf2parquet`
-- No pagination (based on `AG Grid`'s "infinite scroll" feature)
-- Works on millions of variants without loading them in memory (thanks to `AG Grid` + `polars` as a sort of backend)
-- Filter by columns and if multiple -> AND logic applied
-- Colored genotypes
+Read VCF converted in parquet by `vcf2parquet`
+
+No pagination (based on `AG Grid`'s "infinite scroll" feature)
+
+Works on millions of variants without loading them in memory (thanks to `AG Grid` + `polars` as a sort of backend)
+
+Filter by columns and if multiple -> AND logic applied
+
+Colored genotypes
+
+Customization through companion yaml (TODO documentation):
+* Sort on a column
+* Add a tooltip for a column, with info from other columns (hidden if so)
 
 ## Installation
 ```
