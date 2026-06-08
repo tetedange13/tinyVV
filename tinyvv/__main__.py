@@ -5,10 +5,10 @@ import polars as pl
 import sys
 import os.path as osp
 import yaml
-import json
 # LOCAL imports
 from .filtering import parse_column_filter, make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
+from .utils import nice_dict
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +46,7 @@ def main():
         logging.info("Found 'sample.yaml' -> loading conf")
         with open(attached_yaml, 'r') as conf_file:
             conf = yaml.safe_load(conf_file)
-        logging.debug(json.dumps(conf, indent=2))
+        logging.debug(nice_dict(conf))
 
     else:
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
@@ -114,7 +114,9 @@ def main():
                 a_col["tooltipField"] = a_col['field']  # Mandatory
                 a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col['field'])
 
-    logger.debug(print(json.dumps(columnDefs, indent=2)))
+        logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
+
+    logger.debug(nice_dict(columnDefs))
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation
