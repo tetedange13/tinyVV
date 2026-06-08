@@ -7,20 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [Not planned]
+
+### Feature
+
+- Let user select parquet file through page
+
+### Reason
+
+- Browser convert loaded file to base64, which can be slow on big file. Also feature not very relevant if someday app sits on a parquets lake
+
+<br>
+
 ## [Unreleased]
 
 ### Added
 
-- Implem tooltips for pop_freq
-- Add a column selector ?
-- Let user select parquet file through page
+- Add a column selector ? Maybe through "sample.yaml" ?
 - Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
-- Find a way to avoid hard-written column names ("config.yaml" ?)
+- 'chr:pos:ref:alt' col + clickable MobiDetails link
 
 <br>
 
-## [0.1.2] - 2026-06.04
+## [0.2.0] - 2026-06-08
+
+### Added
+
+- Support companion YAML for configuration (auto-detect "sample.yaml" near "sample.parquet")
+- Allow to sort on a column (columns not sortable otherwise)
+- Allow to define columns showing a tooltip, with data from other columns (eg: pop_freq)
+
+### Fixed
+
+- Modules splitting were incorrect
+
+<br>
+
+## [0.1.2] - 2026-06-04
 
 ### Changed
 
@@ -28,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
-## [0.1.1] - 2026-06.03
+## [0.1.1] - 2026-06-03
 
 ### Changed
 

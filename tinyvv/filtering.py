@@ -1,3 +1,6 @@
+import polars as pl
+
+
 def parse_column_filter(filter_obj, col_name):
    """Build a polars filter expression based on the filter object"""
    if filter_obj["filterType"] == "set":

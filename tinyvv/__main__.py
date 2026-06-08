@@ -1,133 +1,22 @@
+import logging
 import dash_ag_grid as dag
 from dash import Dash, Input, Output, dcc, html, no_update, callback
 import polars as pl
 import sys
-
-
-def parse_column_filter(filter_obj, col_name):
-   """Build a polars filter expression based on the filter object"""
-   if filter_obj["filterType"] == "set":
-       expr = None
-       for val in filter_obj["values"]:
-           expr |= pl.col(col_name).cast(pl.Utf8).cast(pl.Categorical) == val
-   else:
-       if filter_obj["filterType"] == "date":
-           crit1 = filter_obj["dateFrom"]
-
-
-           if "dateTo" in filter_obj:
-               crit2 = filter_obj["dateTo"]
-
-
-       else:
-           if "filter" in filter_obj:
-               crit1 = filter_obj["filter"]
-           if "filterTo" in filter_obj:
-               crit2 = filter_obj["filterTo"]
-
-
-       if filter_obj["type"] == "contains":
-           lower = (crit1).lower()
-           expr = pl.col(col_name).str.to_lowercase().str.contains(lower)
-
-
-       elif filter_obj["type"] == "notContains":
-           lower = (crit1).lower()
-           expr = ~pl.col(col_name).str.to_lowercase().str.contains(lower)
-       elif filter_obj["type"] == "startsWith":
-           lower = (crit1).lower()
-           expr = pl.col(col_name).str.starts_with(lower)
-
-
-       elif filter_obj["type"] == "notStartsWith":
-           lower = (crit1).lower()
-           expr = ~pl.col(col_name).str.starts_with(lower)
-
-
-       elif filter_obj["type"] == "endsWith":
-           lower = (crit1).lower()
-           expr = pl.col(col_name).str.ends_with(lower)
-
-
-       elif filter_obj["type"] == "notEndsWith":
-           lower = (crit1).lower()
-           expr = ~pl.col(col_name).str.ends_with(lower)
-
-
-       elif filter_obj["type"] == "blank":
-           expr = pl.col(col_name).is_null()
-
-
-       elif filter_obj["type"] == "notBlank":
-           expr = ~pl.col(col_name).is_null()
-
-
-       elif filter_obj["type"] == "equals":
-           expr = pl.col(col_name) == crit1
-
-
-       elif filter_obj["type"] == "notEqual":
-           expr = pl.col(col_name) != crit1
-
-
-       elif filter_obj["type"] == "lessThan":
-           expr = pl.col(col_name) < crit1
-
-
-       elif filter_obj["type"] == "lessThanOrEqual":
-           expr = pl.col(col_name) <= crit1
-
-
-       elif filter_obj["type"] == "greaterThan":
-           expr = pl.col(col_name) > crit1
-
-
-       elif filter_obj["type"] == "greaterThanOrEqual":
-           expr = pl.col(col_name) >= crit1
-
-
-       elif filter_obj["type"] == "inRange":
-           if filter_obj["filterType"] == "date":
-               expr = (pl.col(col_name) >= crit1) & (pl.col(col_name) <= crit2)
-           else:
-               expr = (pl.col(col_name) >= crit1) & (pl.col(col_name) <= crit2)
-       else:
-           None
-
-
-   return expr
-
-
-def make_filter_expr_list(filt_model):
-   expr_list = []
-   for a_col in filt_model:
-      expr_list.append(parse_column_filter(filt_model[a_col], a_col))
-   return expr_list
-
-
-def colorize_GT():
-    style_dict = {
-        # Default style if no rules apply
-        "defaultStyle": {"backgroundColor": "mediumaquamarine"}
-    }
-
-    # Set of rules
-    style_dict["styleConditions"] = [
-                {
-                    "condition": "params.value=='1/1'",
-                    "style": {"backgroundColor": "sandybrown"},
-                },
-                {
-                    "condition": "params.value=='0/1'",
-                    "style": {"backgroundColor": "lightcoral"},
-                }
-            ]
-
-    return style_dict
+import os.path as osp
+import yaml
+# LOCAL imports
+from .filtering import parse_column_filter, make_filter_expr_list
+from .styling import colorize_GT, aggKey_to_func
+from .utils import nice_dict
+logger = logging.getLogger(__name__)
 
 
 # MAIN
 def main():
+    #Output to log file:
+    #logging.basicConfig(filename='tinyvv.log', level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
 
     def scan_ldf(
         filter_model=None,
@@ -142,7 +31,6 @@ def main():
             if expression_list:
                 filter_query = None
                 for expr in expression_list:
-                    print(str(expr))
                     if filter_query is None:
                         filter_query = expr
                     else:
@@ -150,12 +38,24 @@ def main():
                 ldf = ldf.filter(filter_query)
         return ldf
 
-    app = Dash()
 
-    DATA_SOURCE = pl.scan_parquet(sys.argv[1])
+    in_parquet_path = sys.argv[1]
+    root_path = osp.splitext(in_parquet_path)[0]
+    attached_yaml = root_path + '.yaml'
+    if osp.isfile(attached_yaml):
+        logging.info("Found 'sample.yaml' -> loading conf")
+        with open(attached_yaml, 'r') as conf_file:
+            conf = yaml.safe_load(conf_file)
+        logging.debug(nice_dict(conf))
 
-    all_cols = DATA_SOURCE.collect_schema().names()
-    #print(all_cols)  # DEBUG
+    else:
+        logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
+
+    DATA_SOURCE = pl.scan_parquet(in_parquet_path)
+
+    full_schema = DATA_SOURCE.collect_schema()
+    all_cols = full_schema.names()
+    #logger.debug(all_cols)
 
     # Find genotype columns by their name:
     GT_cols = []
@@ -173,15 +73,28 @@ def main():
     wanted_cols += [ c for c in all_cols if c.startswith('info_')]
 
     # FUTURE: Tooltip pop_freq:
-    #'tooltipValueGetter': {"function": "params.data.athlete + ' was ' + params.data.age + ' in ' + params.value"},
-    # wanted_cols += [
-    #     'info_gnomAD_exome_ALL',
-    #     'info_gnomAD_exome_AFR'
-    #     ]
 
-    DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
+    # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
+    #       -> Have to use '.list.join' + '.cast' to have proper sort
+    # WARN2: Cast works only for int score (what about 'float' score)
+    if osp.isfile(attached_yaml) and 'sort' in conf.keys():
+        if full_schema[conf['sort'][0]] == pl.List(str):
+            # First join list(str) -> str, then cast to int
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                pl.col(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
+                ).sort(by=conf['sort'][0], descending=conf['sort'][1]
+                ).select(wanted_cols)
+        else: # just sort
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                ).sort(by=conf['sort'][0], descending=conf['sort'][1]
+                ).select(wanted_cols)
+
+    else:
+        DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
+
     # Bellow is a kind of assert (FAIL if selected wrong cols):
-    DATA_SOURCE.head().collect()
+    logger.info("Show first 10 rows of data:")
+    print(DATA_SOURCE.head().collect())
 
     columnDefs=[{"field": i} for i in wanted_cols]
 
@@ -189,11 +102,31 @@ def main():
     for a_col in columnDefs:
         if a_col['field'] in GT_cols:
             a_col['cellStyle'] = colorize_GT()
-    #print(columnDefs) ; exit()  # DEBUG
+
+    # Add tooltips:
+    ## Write 1st line of JS file describing custom tooltip:
+    with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as tooltip_file:
+        tooltip_file.write("var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});\n\n")
+    ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
+    if 'agg_in_tooltip' in conf.keys():
+        to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
+        for a_col in columnDefs:
+            if a_col['field'] in conf['agg_in_tooltip'].keys():
+                a_col["tooltipField"] = a_col['field']  # Mandatory
+                a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col['field'])
+            # Hide columns whose data are in tooltip:
+            if a_col['field'] in to_hide:
+                a_col["hide"] = True
+
+        logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
+
+    logger.debug(nice_dict(columnDefs))
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation
     #total_rows = DATA_SOURCE.select('chromosome').with_row_index().last().select('index').collect().item()
+
+    app = Dash()
 
     app.layout = html.Div(
         [
@@ -202,7 +135,10 @@ def main():
                 id="infinite-grid",
                 style={"height": 600, "width": "100%"},
                 columnDefs=columnDefs,
-                defaultColDef={"sortable": False, "filter": True},
+                defaultColDef={
+                    "sortable": False,
+                    "filter": True,
+                },
                 rowModelType="infinite",
                 dashGridOptions={
                     # The number of rows rendered outside the viewable area the grid renders.
@@ -210,6 +146,7 @@ def main():
                     # How many blocks to keep in the store. Default is no limit, so every requested block is kept.
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
+                    "tooltipShowDelay": 0,
                 },
             ),
             dcc.Store(id="filter-model"),
@@ -228,12 +165,10 @@ def main():
         if request is None:
             return no_update
         columns = [col["field"] for col in columnDefs]
-        print(request["filterModel"])
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
         partial = ldf[request["startRow"] : request["endRow"]].collect()
         # Count rows after filter, but handle case where filter return nothing:
         rows_count_df = ldf.select('chromosome').with_row_index().last().select('index').collect()
-        print(rows_count_df.shape)
         if rows_count_df.shape[0] == 0:
             rows_count = 0
         else:
