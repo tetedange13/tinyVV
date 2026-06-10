@@ -58,21 +58,38 @@ def main():
     #logger.debug(all_cols)
 
     # Find genotype columns by their name:
+    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
     GT_cols = []
     for a_col in all_cols:
         if a_col.startswith('format_') and a_col.endswith('_GT'):
             GT_cols.append(a_col)
 
-    wanted_cols = [
+    # Create 'chr-pos-ref-alt' col:
+    to_concat = [
         'chromosome',
         'position',
         'reference',
         'alternate'
     ]
+    DATA_SOURCE = DATA_SOURCE.with_columns(
+        pl.concat_str(
+            [
+                "chromosome",
+                "position",
+                "reference",
+                pl.col("alternate").list.join(separator="")
+            ],
+            separator="-"
+        ).alias("#CHROMPOSREFALT")
+    ).drop(to_concat)
+
+    # Real 'wanted_cols':
+    wanted_cols = ["#CHROMPOSREFALT"]
     wanted_cols += GT_cols
     wanted_cols += [ c for c in all_cols if c.startswith('info_')]
 
-    # FUTURE: Tooltip pop_freq:
+    # [FUTURE] Clickable link in CHROMPOSREFALT
+    #https://franklin.genoox.com/clinical-db/variant/snp/chr1-1027366-C-T-hg19
 
     # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
     #       -> Have to use '.list.join' + '.cast' to have proper sort
@@ -168,7 +185,7 @@ def main():
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
         partial = ldf[request["startRow"] : request["endRow"]].collect()
         # Count rows after filter, but handle case where filter return nothing:
-        rows_count_df = ldf.select('chromosome').with_row_index().last().select('index').collect()
+        rows_count_df = ldf.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect()
         if rows_count_df.shape[0] == 0:
             rows_count = 0
         else:

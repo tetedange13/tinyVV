@@ -3,8 +3,9 @@ sort:
   - False
 
 agg_in_tooltip:
-  position:
+  info_gnomAD_exome_ALL:
     - info_gnomAD_exome_AFR
     - info_gnomAD_exome_AMR
-  reference:
-    - chromosome
+  info_gnomAD_genome_ALL:
+    - info_gnomAD_genome_AFR
+    - info_gnomAD_genome_AMR
