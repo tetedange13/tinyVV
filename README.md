@@ -1,5 +1,5 @@
 # tinyVV
-Tiny but powerful variants viewer. Powered by [Dash AG Grid](https://dash.plotly.com/dash-ag-grid) and polars. Inspired by [Captain-ACHAB](https://github.com/mobidic/Captain-ACHAB)
+Tiny (but powerful) Variants Viewer. Powered by [Dash AG Grid](https://dash.plotly.com/dash-ag-grid) and polars. Inspired by [Captain-ACHAB](https://github.com/mobidic/Captain-ACHAB)
 
 ## Disclamer
 Very early stage, should not be used
