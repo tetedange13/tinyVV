@@ -9,3 +9,5 @@ agg_in_tooltip:
   info_gnomAD_genome_ALL:
     - info_gnomAD_genome_AFR
     - info_gnomAD_genome_AMR
+  info_AC:
+    - info_AF
