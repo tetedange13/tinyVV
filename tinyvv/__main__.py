@@ -121,11 +121,11 @@ def main():
             a_col['cellStyle'] = colorize_GT()
 
     # Add tooltips:
-    ## Write 1st line of JS file describing custom tooltip:
-    with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as tooltip_file:
-        tooltip_file.write("var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});\n\n")
-    ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
-    if 'agg_in_tooltip' in conf.keys():
+    if osp.isfile(attached_yaml) and 'agg_in_tooltip' in conf.keys():
+        ## Write 1st line of JS file describing custom tooltip:
+        with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as tooltip_file:
+            tooltip_file.write("var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});\n\n")
+        ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
         to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
         for a_col in columnDefs:
             if a_col['field'] in conf['agg_in_tooltip'].keys():
