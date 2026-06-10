@@ -2,11 +2,10 @@ import logging
 import dash_ag_grid as dag
 from dash import Dash, Input, Output, dcc, html, no_update, callback
 import polars as pl
-import sys
 import os.path as osp
 import yaml
 # LOCAL imports
-from .filtering import parse_column_filter, make_filter_expr_list
+from .filtering import make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
 from .utils import parse_args, nice_dict
 logger = logging.getLogger(__name__)
@@ -116,8 +115,8 @@ def main():
 
     # Color GT cols:
     for a_col in columnDefs:
-        if a_col['field'] in GT_cols:
-            a_col['cellStyle'] = colorize_GT()
+        if a_col["field"] in GT_cols:
+            a_col["cellStyle"] = colorize_GT()
 
     # Add hyperlink to 'chr-pos-ref-alt' col:
     # ENH: Use MobiDetails instead (API key required to query variant)
@@ -147,11 +146,12 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
         to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
         for a_col in columnDefs:
-            if a_col['field'] in conf['agg_in_tooltip'].keys():
-                a_col["tooltipField"] = a_col['field']  # Mandatory
-                a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col['field'])
+            col_name = a_col["field"]
+            if col_name in conf['agg_in_tooltip'].keys():
+                a_col["tooltipField"] = col_name  # Mandatory
+                a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], col_name)
             # Hide columns whose data are in tooltip:
-            if a_col['field'] in to_hide:
+            if col_name in to_hide:
                 a_col["hide"] = True
 
         logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
