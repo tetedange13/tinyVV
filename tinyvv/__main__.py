@@ -90,9 +90,6 @@ def main():
     wanted_cols += GT_cols
     wanted_cols += [ c for c in all_cols if c.startswith('info_')]
 
-    # [FUTURE] Clickable link in CHROMPOSREFALT
-    #https://franklin.genoox.com/clinical-db/variant/snp/chr1-1027366-C-T-hg19
-
     # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
     #       -> Have to use '.list.join' + '.cast' to have proper sort
     # WARN2: Cast works only for int score (what about 'float' score)
@@ -122,11 +119,31 @@ def main():
         if a_col['field'] in GT_cols:
             a_col['cellStyle'] = colorize_GT()
 
+    # Add hyperlink to 'chr-pos-ref-alt' col:
+    # ENH: Use MobiDetails instead (API key required to query variant)
+    # MEMO: 1st line declares customCompon and is common to tooltip compon
+    custom_compon = """var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});
+
+dagcomponentfuncs.chrPosRefAltLink = function (props) {
+    return React.createElement(
+        'a',
+        {href: 'https://franklin.genoox.com/clinical-db/variant/snp/' + props.value + '-BUILD'},
+        props.value
+    );
+};
+
+"""
+    with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as compon_file:
+        compon_file.write(custom_compon.replace('BUILD', args.build))
+
+    # ENH: Do not parcours colDef twice
+    for a_col in columnDefs:
+        if a_col["field"] == "#CHROMPOSREFALT":
+            # JS func defined in 'dashAgGridComponentFunctions.js':
+            a_col["cellRenderer"] = "chrPosRefAltLink"
+
     # Add tooltips:
     if osp.isfile(attached_yaml) and 'agg_in_tooltip' in conf.keys():
-        ## Write 1st line of JS file describing custom tooltip:
-        with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as tooltip_file:
-            tooltip_file.write("var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});\n\n")
         ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
         to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
         for a_col in columnDefs:
