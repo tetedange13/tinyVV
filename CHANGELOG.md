@@ -26,7 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a column selector ? Maybe through "sample.yaml" ?
 - Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
-- 'chr:pos:ref:alt' col + clickable MobiDetails link
+- Documentation for companion "sample.yaml"
+
+<br>
+
+## [0.3.0] - 2026-06-10
+
+### Added
+
+- New "chr:pos:ref:alt" column with clickable link to Franklin
 
 <br>
 
