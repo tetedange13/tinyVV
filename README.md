@@ -1,5 +1,5 @@
 # tinyVV
-Tiny but powerful variants viewer. Powered by [Dash AG Grid](https://dash.plotly.com/dash-ag-grid) and polars. Inspired by [Captain-ACHAB](https://github.com/mobidic/Captain-ACHAB)
+Tiny (but powerful) Variants Viewer. Powered by [Dash AG Grid](https://dash.plotly.com/dash-ag-grid) and polars. Inspired by [Captain-ACHAB](https://github.com/mobidic/Captain-ACHAB)
 
 ## Disclamer
 Very early stage, should not be used
@@ -18,6 +18,8 @@ Colored genotypes
 Customization through companion yaml (TODO documentation):
 * Sort on a column
 * Add a tooltip for a column, with info from other columns (hidden if so)
+
+Link to Franklin variant page through 'chr-pos-ref-alt' column
 
 ## Installation
 ```
@@ -38,7 +40,7 @@ vcf2parquet \
 
 Then start app and open it your favorite Web browser:
 ```
-python -m tinyvv examples/INPUT_hg19_annovar_MPA.parquet
+python -m tinyvv -i examples/INPUT_hg19_annovar_MPA.parquet --build hg19
 
 # Open URL in browser: http://127.0.0.1:8050/
 ```
@@ -48,20 +50,20 @@ python -m tinyvv examples/INPUT_hg19_annovar_MPA.parquet
 
 ```
 # Download NIST's benchmark VCF for HG001:
-wget https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv4.2.1/GRCh37/HG001_GRCh37_1_22_v4.2.1_benchmark.vcf.gz
+wget https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv4.2.1/GRCh38/HG001_GRCh38_1_22_v4.2.1_benchmark.vcf.gz
 
 # Count variants:
-bcftools +counts HG001_GRCh37_1_22_v4.2.1_benchmark.vcf.gz
+bcftools +counts HG001_GRCh38_1_22_v4.2.1_benchmark.vcf.gz
 # -> Expected: ~ 3.9 millions variants
 
 # Convert to parquet:
 vcf2parquet \
-    -i HG001_GRCh37_1_22_v4.2.1_benchmark.vcf.gz \
+    -i HG001_GRCh38_1_22_v4.2.1_benchmark.vcf.gz \
     convert \
-    -o HG001_GRCh37_1_22_v4.2.1_benchmark.parquet
+    -o HG001_GRCh38_1_22_v4.2.1_benchmark.parquet
 
 # Explore it with tinyVV:
-python -m tinyvv HG001_GRCh37_1_22_v4.2.1_benchmark.parquet
+python -m tinyvv -i HG001_GRCh38_1_22_v4.2.1_benchmark.parquet
 ```
 
 ## Limitations / Known issues
