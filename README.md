@@ -38,7 +38,7 @@ vcf2parquet \
 
 Then start app and open it your favorite Web browser:
 ```
-python -m tinyvv examples/INPUT_hg19_annovar_MPA.parquet
+python -m tinyvv -i examples/INPUT_hg19_annovar_MPA.parquet
 
 # Open URL in browser: http://127.0.0.1:8050/
 ```
@@ -61,7 +61,7 @@ vcf2parquet \
     -o HG001_GRCh37_1_22_v4.2.1_benchmark.parquet
 
 # Explore it with tinyVV:
-python -m tinyvv HG001_GRCh37_1_22_v4.2.1_benchmark.parquet
+python -m tinyvv -i HG001_GRCh37_1_22_v4.2.1_benchmark.parquet
 ```
 
 ## Limitations / Known issues

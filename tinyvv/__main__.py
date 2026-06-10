@@ -8,7 +8,7 @@ import yaml
 # LOCAL imports
 from .filtering import parse_column_filter, make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
-from .utils import nice_dict
+from .utils import parse_args, nice_dict
 logger = logging.getLogger(__name__)
 
 
@@ -38,8 +38,10 @@ def main():
                 ldf = ldf.filter(filter_query)
         return ldf
 
+    # Parse arguments:
+    args = parse_args()
 
-    in_parquet_path = sys.argv[1]
+    in_parquet_path = args.input
     root_path = osp.splitext(in_parquet_path)[0]
     attached_yaml = root_path + '.yaml'
     if osp.isfile(attached_yaml):
