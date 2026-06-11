@@ -3,7 +3,7 @@
 
 
 ## Intro
-TinyVV will automatically look for a file called `sample.yaml` near input `sample.parquet`
+TinyVV will automatically look for a companion YAML file called `sample.yaml` near input `sample.parquet`
 
 This file is completely optional and TinyVV will work even if not found
 
