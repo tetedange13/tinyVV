@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
+- Put all FORMAT data in 1st GT col ? (same as Achab)
+- Add "case depth" and "case AB" cols ?
+- Use "shrink_dtype" to solve problem of "List(str)" cols ?
 
 <br>
 
