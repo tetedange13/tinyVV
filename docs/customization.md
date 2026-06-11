@@ -11,6 +11,20 @@ Under `example` sub-dir, there is a YAML detailing use cases
 
 <br>
 
+### WARNING and INFO
+
+Customization is reserved to "INFO" columns
+
+Columns like `CHROM`, `POS` or `GT` are customized inside `TinyVV` main code
+
+To show columns available for customization, run:
+
+```
+python -m tinyvv --list_cols
+```
+
+<br>
+
 ## Possible keys
 
 ### sort

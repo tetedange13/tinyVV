@@ -56,7 +56,10 @@ def main():
 
     full_schema = DATA_SOURCE.collect_schema()
     all_cols = full_schema.names()
-    #logger.debug(all_cols)
+
+    if args.list_cols:
+        [print(col) for col in all_cols if col.startswith('info_')]
+        exit()
 
     # Find genotype columns by their name:
     # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
