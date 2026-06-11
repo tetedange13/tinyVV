@@ -15,7 +15,7 @@ Filter by columns and if multiple -> AND logic applied
 
 Colored genotypes
 
-Customization through companion yaml (see [documentation](ttps://github.com/tetedange13/tinyVV/docs/customuzation.md)):
+Customization through companion yaml (see [documentation](https://github.com/tetedange13/tinyVV/blob/dev-felix/docs/customization.md)):
 * Column selection
 * Sort on a column
 * Add a tooltip for a column, with info from other columns (hidden if so)
