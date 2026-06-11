@@ -3,9 +3,13 @@ sort:
   - False
 
 col_selection:
-  - info_AC
-  - info_QD
   - info_MPA_ranking
+  - info_MPA_impact
+  - info_Gene.refGene
+  - info_gnomAD_exome_ALL
+  - info_gnomAD_genome_ALL
+  - info_CLNSIG
+  - info_InterVar_automated
 
 agg_in_tooltip:
   info_gnomAD_exome_ALL:
@@ -14,5 +18,3 @@ agg_in_tooltip:
   info_gnomAD_genome_ALL:
     - info_gnomAD_genome_AFR
     - info_gnomAD_genome_AMR
-  info_AC:
-    - info_AF
