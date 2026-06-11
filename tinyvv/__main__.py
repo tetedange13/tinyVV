@@ -84,10 +84,22 @@ def main():
         ).alias("#CHROMPOSREFALT")
     ).drop(to_concat)
 
-    # Real 'wanted_cols':
+    # wanted_cols:
+    # Also add all 'format' ones ? (eg: DP)
     wanted_cols = ["#CHROMPOSREFALT"]
     wanted_cols += GT_cols
-    wanted_cols += [ c for c in all_cols if c.startswith('info_')]
+
+    # Add columns selected by user:
+    if osp.isfile(attached_yaml) and 'col_selection' in conf.keys():
+        wanted_cols += conf['col_selection']
+        # Also add cols declared in 'agg_in_tooltip' section:
+        if 'agg_in_tooltip' in conf.keys():
+            wanted_cols += conf['agg_in_tooltip'].keys()
+            wanted_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
+            wanted_cols = list(dict.fromkeys(wanted_cols))  # Uniquify to avoid duplicate
+        # Do we need to add col from 'sort' section ???
+    else:  # Default to all 'info' cols
+        wanted_cols += [ c for c in all_cols if c.startswith('info_')]
 
     # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
     #       -> Have to use '.list.join' + '.cast' to have proper sort
