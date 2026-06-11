@@ -8,6 +8,7 @@ def parse_args():
                     description='Tiny (but powerful) Variants Viewer')
     parser.add_argument('-i', '--input', type=str, help="Input parquet file produced by vcf2parquet")
     parser.add_argument('-g', '--build', default='hg38', type=str, help="Genome build (default= 'hg38')")
+    parser.add_argument('-l', '--list_cols', action="store_true", help="If provided, list columns and exit")
     return parser.parse_args()
 
 

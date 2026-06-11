@@ -23,10 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add a column selector ? Maybe through "sample.yaml" ?
 - Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
-- Documentation for companion "sample.yaml"
+
+<br>
+
+## [0.4.0] - 2026-06-11
+
+### Added
+
+- Columns selection through companion YAML
+- New argument (`-l / --list_cols`) to list columns and exit (help for `col_selection`)
+- Documentation for customization through companion YAML 
 
 <br>
 

@@ -1,8 +1,10 @@
-# tinyVV
+# TinyVV
 Tiny (but powerful) Variants Viewer. Powered by [Dash AG Grid](https://dash.plotly.com/dash-ag-grid) and polars. Inspired by [Captain-ACHAB](https://github.com/mobidic/Captain-ACHAB)
 
 ## Disclamer
-Very early stage, should not be used
+Very early stage, **use at your own risk**
+
+<br>
 
 ## Features
 Read VCF converted in parquet by `vcf2parquet`
@@ -15,11 +17,14 @@ Filter by columns and if multiple -> AND logic applied
 
 Colored genotypes
 
-Customization through companion yaml (TODO documentation):
+Customization through companion yaml (see [documentation](https://github.com/tetedange13/tinyVV/blob/dev-felix/docs/customization.md)):
+* Column selection
 * Sort on a column
 * Add a tooltip for a column, with info from other columns (hidden if so)
 
-Link to Franklin variant page through 'chr-pos-ref-alt' column
+Link to Franklin variant page through `#CHROMPOSREFALT` column
+
+<br>
 
 ## Installation
 ```
@@ -28,6 +33,8 @@ cd tinyVV
 conda env create -f environment.yml
 conda activate tinyVV
 ```
+
+<br>
 
 ## Usage
 If starting from a VCF, first convert it to parquet with `vcf2parquet` (included in env):
@@ -45,8 +52,10 @@ python -m tinyvv -i examples/INPUT_hg19_annovar_MPA.parquet --build hg19
 # Open URL in browser: http://127.0.0.1:8050/
 ```
 
+<br>
+
 ## The real deal
-`tinyVV` main goal was to support interpretation of whole-genome VCF without pagination. Following steps will let you try its power with a public VCF containing millions of variants !
+`TinyVV` main goal was to support interpretation of whole-genome VCF without pagination. Following steps will let you experiment its power with a public VCF containing millions of variants !
 
 ```
 # Download NIST's benchmark VCF for HG001:
@@ -66,11 +75,15 @@ vcf2parquet \
 python -m tinyvv -i HG001_GRCh38_1_22_v4.2.1_benchmark.parquet
 ```
 
+<br>
+
 ## Limitations / Known issues
 - Parquet input should be provided as command-line argument
 - Only 1 parquet file supported at once
-- Multiple columns are of type `list[str]` which fails most 'text' filters (Polars error: `expected String type, got: list[str]`)
-- Sorting by a column is possible through config, but better sort your parquet beforehand (heavy in memory for large datasets)
+- Multiple columns are of type `list[str]` which fails most "text" filters (Polars error: `expected String type, got: list[str]`)
+- Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
+
+<br>
 
 ## Credits
 - Parts of the code were taken from this blog post : https://plotly.com/blog/polars-to-build-fast-dash-apps-for-large-datasets/

@@ -2,6 +2,11 @@ sort:
   - info_MPA_ranking
   - False
 
+col_selection:
+  - info_AC
+  - info_QD
+  - info_MPA_ranking
+
 agg_in_tooltip:
   info_gnomAD_exome_ALL:
     - info_gnomAD_exome_AFR
@@ -9,3 +14,5 @@ agg_in_tooltip:
   info_gnomAD_genome_ALL:
     - info_gnomAD_genome_AFR
     - info_gnomAD_genome_AMR
+  info_AC:
+    - info_AF
