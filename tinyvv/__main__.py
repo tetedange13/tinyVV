@@ -96,7 +96,7 @@ def main():
         if 'agg_in_tooltip' in conf.keys():
             wanted_cols += conf['agg_in_tooltip'].keys()
             wanted_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
-            wanted_cols = list(dict.fromkeys(wanted_cols))  # Uniquify to avoid duplicate
+            wanted_cols = list(dict.fromkeys(wanted_cols))  # De-duplicate
         # Do we need to add col from 'sort' section ???
     else:  # Default to all 'info' cols
         wanted_cols += [ c for c in all_cols if c.startswith('info_')]
