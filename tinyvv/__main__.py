@@ -8,6 +8,7 @@ import yaml
 from .filtering import make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
 from .utils import parse_args, nice_dict
+from .query import source_data
 logger = logging.getLogger(__name__)
 
 
@@ -16,6 +17,9 @@ def main():
     #Output to log file:
     #logging.basicConfig(filename='tinyvv.log', level=logging.DEBUG)
     logging.basicConfig(level=logging.DEBUG)
+
+    # [FUTURE] query parquet lake:
+    #source_data()
 
     def scan_ldf(
         filter_model=None,
