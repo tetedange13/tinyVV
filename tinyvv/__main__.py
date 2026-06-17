@@ -8,7 +8,7 @@ import yaml
 from .filtering import make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
 from .utils import parse_args, nice_dict
-from .query import source_data
+from .query import lake_data
 logger = logging.getLogger(__name__)
 
 
@@ -18,8 +18,6 @@ def main():
     #logging.basicConfig(filename='tinyvv.log', level=logging.DEBUG)
     logging.basicConfig(level=logging.DEBUG)
 
-    # [FUTURE] query parquet lake:
-    #source_data()
 
     def scan_ldf(
         filter_model=None,
@@ -44,24 +42,38 @@ def main():
     # Parse arguments:
     args = parse_args()
 
-    in_parquet_path = args.input
-    root_path = osp.splitext(in_parquet_path)[0]
-    attached_yaml = root_path + '.yaml'
-    if osp.isfile(attached_yaml):
+    if args.config and osp.isfile(args.config):
         logging.info("Found 'sample.yaml' -> loading conf")
-        with open(attached_yaml, 'r') as conf_file:
+        with open(args.config, 'r') as conf_file:
             conf = yaml.safe_load(conf_file)
         logging.debug(nice_dict(conf))
-
     else:
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
 
-    DATA_SOURCE = pl.scan_parquet(in_parquet_path)
+    # Add columns selected by user:
+    if args.config and osp.isfile(args.config) and 'col_selection' in conf.keys():
+        info_cols = conf['col_selection']
+        # Also add cols declared in 'agg_in_tooltip' section:
+        if 'agg_in_tooltip' in conf.keys():
+            info_cols += conf['agg_in_tooltip'].keys()
+            info_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
+            info_cols = list(dict.fromkeys(wanted_cols))  # De-duplicate
+        # Do we need to add col from 'sort' section ???
+
+    if args.parquet and osp.isfile(args.parquet):
+        DATA_SOURCE = pl.scan_parquet(args.parquet)
+        # Fix cols:
+        DATA_SOURCE.with_columns(pl.col("alternate").list.join(separator=""))
+    elif args.input:
+        cols_list = None
+        if args.config and osp.isfile(args.config):
+            cols_list = conf.get('col_selection', None)
+        DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
 
     full_schema = DATA_SOURCE.collect_schema()
     all_cols = full_schema.names()
 
-    if args.list_cols:
+    if args.show_cols:
         [print(col) for col in all_cols if col.startswith('info_')]
         exit()
 
@@ -81,12 +93,7 @@ def main():
     ]
     DATA_SOURCE = DATA_SOURCE.with_columns(
         pl.concat_str(
-            [
-                "chromosome",
-                "position",
-                "reference",
-                pl.col("alternate").list.join(separator="")
-            ],
+            to_concat,
             separator="-"
         ).alias("#CHROMPOSREFALT")
     ).drop(to_concat)
@@ -96,22 +103,16 @@ def main():
     wanted_cols = ["#CHROMPOSREFALT"]
     wanted_cols += GT_cols
 
-    # Add columns selected by user:
-    if osp.isfile(attached_yaml) and 'col_selection' in conf.keys():
-        wanted_cols += conf['col_selection']
-        # Also add cols declared in 'agg_in_tooltip' section:
-        if 'agg_in_tooltip' in conf.keys():
-            wanted_cols += conf['agg_in_tooltip'].keys()
-            wanted_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
-            wanted_cols = list(dict.fromkeys(wanted_cols))  # De-duplicate
-        # Do we need to add col from 'sort' section ???
-    else:  # Default to all 'info' cols
+    if args.config and osp.isfile(args.config) and 'col_selection' in conf.keys():
+        wanted_cols += info_cols
+    else:
         wanted_cols += [ c for c in all_cols if c.startswith('info_')]
+
 
     # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
     #       -> Have to use '.list.join' + '.cast' to have proper sort
     # WARN2: Cast works only for int score (what about 'float' score)
-    if osp.isfile(attached_yaml) and 'sort' in conf.keys():
+    if osp.isfile(args.config) and 'sort' in conf.keys():
         if full_schema[conf['sort'][0]] == pl.List(str):
             # First join list(str) -> str, then cast to int
             DATA_SOURCE = DATA_SOURCE.with_columns(
@@ -161,7 +162,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             a_col["cellRenderer"] = "chrPosRefAltLink"
 
     # Add tooltips:
-    if osp.isfile(attached_yaml) and 'agg_in_tooltip' in conf.keys():
+    if osp.isfile(args.config) and 'agg_in_tooltip' in conf.keys():
         ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
         to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
         for a_col in columnDefs:

@@ -1,0 +1,19 @@
+sort:
+  - MPA_ranking
+  - False
+
+col_selection:
+  - MPA_ranking
+  - MPA_impact
+  - gnomAD_exome_ALL
+  - gnomAD_genome_ALL
+  - CLNSIG
+  - InterVar_automated
+
+agg_in_tooltip:
+  gnomAD_exome_ALL:
+    - gnomAD_exome_AFR
+    - gnomAD_exome_AMR
+  gnomAD_genome_ALL:
+    - gnomAD_genome_AFR
+    - gnomAD_genome_AMR
