@@ -1,5 +1,5 @@
 # TinyVV
-Tiny (but powerful) Variants Viewer. Powered by [Dash AG Grid](https://dash.plotly.com/dash-ag-grid) and polars. Inspired by [Captain-ACHAB](https://github.com/mobidic/Captain-ACHAB)
+Tiny (but powerful) Variants Viewer. Powered by [Dash AG Grid](https://dash.plotly.com/dash-ag-grid), polars and [VariantPlaner](https://seqoia-it.github.io/variantplaner/). Inspired by [Captain-ACHAB](https://github.com/mobidic/Captain-ACHAB)
 
 ## Disclamer
 Very early stage, **use at your own risk**
@@ -7,7 +7,9 @@ Very early stage, **use at your own risk**
 <br>
 
 ## Features
-Read VCF converted in parquet by `vcf2parquet`
+Read single VCF converted in parquet by `vcf2parquet`
+
+Read multiple VCF converted to a lake by `variantPlaner`
 
 No pagination (based on `AG Grid`'s "infinite scroll" feature)
 
@@ -47,7 +49,10 @@ vcf2parquet \
 
 Then start app and open it your favorite Web browser:
 ```
-python -m tinyvv -i examples/INPUT_hg19_annovar_MPA.parquet --build hg19
+python -m tinyvv \
+    --parquet examples/INPUT_hg19_annovar_MPA.parquet \
+    -c examples/INPUT_hg19_annovar_MPA.yaml \
+    --build hg19
 
 # Open URL in browser: http://127.0.0.1:8050/
 ```
@@ -72,14 +77,15 @@ vcf2parquet \
     -o HG001_GRCh38_1_22_v4.2.1_benchmark.parquet
 
 # Explore it with tinyVV:
-python -m tinyvv -i HG001_GRCh38_1_22_v4.2.1_benchmark.parquet
+python -m tinyvv \
+    --parquet HG001_GRCh38_1_22_v4.2.1_benchmark.parquet
 ```
 
 <br>
 
 ## Limitations / Known issues
-- Parquet input should be provided as command-line argument
-- Only 1 parquet file supported at once
+- Parquet inputs (single or as lake) should be provided as command-line argument
+- `chr-pos-ref-alt` col filter broken (always return "no match")
 - Multiple columns are of type `list[str]` which fails most "text" filters (Polars error: `expected String type, got: list[str]`)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
 
