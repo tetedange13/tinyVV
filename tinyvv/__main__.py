@@ -62,7 +62,7 @@ def main():
         # Do we need to add col from 'sort' section ???
 
     # Add/process cols depending on input type:
-    if args.parquet :  # Single pq input
+    if args.parquet:  # Single pq input
         assert osp.isfile(args.parquet), f"Provided parquet '{args.parquet}' not found"
         DATA_SOURCE = pl.scan_parquet(args.parquet)
         full_schema = DATA_SOURCE.collect_schema()
