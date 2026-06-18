@@ -88,6 +88,7 @@ python -m tinyvv \
 - `chr-pos-ref-alt` col filter broken (always return "no match")
 - Multiple columns are of type `list[str]` which fails most "text" filters (Polars error: `expected String type, got: list[str]`)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
+- INFO/ANN colnames differ between single_pq and lake inputs ('info_' prefix vs None)
 
 <br>
 
