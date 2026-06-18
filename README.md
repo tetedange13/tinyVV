@@ -38,7 +38,13 @@ conda activate tinyVV
 
 <br>
 
-## Usage
+## Usages
+
+`TinyVV` supports 2 types of inputs :
+* A single VCF, possibly multi-samples and annotated (better but not mandatory),
+* A lake of parquet files, built using VariantPlaner
+
+### Single parquet
 If starting from a VCF, first convert it to parquet with `vcf2parquet` (included in env):
 ```
 vcf2parquet \
@@ -57,9 +63,7 @@ python -m tinyvv \
 # Open URL in browser: http://127.0.0.1:8050/
 ```
 
-<br>
-
-## The real deal
+### The real deal for single parquet mode
 `TinyVV` main goal was to support interpretation of whole-genome VCF without pagination. Following steps will let you experiment its power with a public VCF containing millions of variants !
 
 ```
@@ -80,6 +84,12 @@ vcf2parquet \
 python -m tinyvv \
     --parquet HG001_GRCh38_1_22_v4.2.1_benchmark.parquet
 ```
+
+### Lake of parquets
+
+First you need to build your lake, you can use `build_lake.sh` to build an example one. This scripts show some of the commands to use
+
+Detailed steps can be found in the documentation (TODO)
 
 <br>
 
