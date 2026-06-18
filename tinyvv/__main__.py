@@ -77,11 +77,12 @@ def main():
     elif args.input:  # Lake input
         # WARN: Bellow 'full_schema' only contains ANN cols...
         full_schema = lake_schema(args.lake)
+        all_ann_cols = [c for c in full_schema.names() if not c.endswith('id')]
         GT_cols = [ f"format_{s}_GT" for s in args.input ]
         if config_OK and 'col_selection' in conf.keys():
             cols_list = selected_cols
         else:
-            cols_list = full_schema.names()
+            cols_list = all_ann_cols
         DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
 
 
