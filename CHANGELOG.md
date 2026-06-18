@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Previous parameter `-i/--input` turned into `-p/--parquet`
 - Config not guessed ("sample.yaml") anymore, should be passed to `-c/--config`
+- Previous argument `-l/--list_cols` (to list columns and exit) renamed as `-s/--show_cols`
 
 ### Added
 
