@@ -42,7 +42,8 @@ def main():
     # Parse arguments:
     args = parse_args()
 
-    if args.config and osp.isfile(args.config):
+    config_OK = args.config and osp.isfile(args.config)
+    if config_OK:
         logging.info("Found 'sample.yaml' -> loading conf")
         with open(args.config, 'r') as conf_file:
             conf = yaml.safe_load(conf_file)
@@ -51,7 +52,7 @@ def main():
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
 
     # Add columns selected by user:
-    if args.config and osp.isfile(args.config) and 'col_selection' in conf.keys():
+    if config_OK and 'col_selection' in conf.keys():
         selected_cols = conf['col_selection']
         # Also add cols declared in 'agg_in_tooltip' section:
         if 'agg_in_tooltip' in conf.keys():
@@ -61,7 +62,8 @@ def main():
         # Do we need to add col from 'sort' section ???
 
     # Add/process cols depending on input type:
-    if args.parquet and osp.isfile(args.parquet):  # Single pq input
+    if args.parquet :  # Single pq input
+        assert osp.isfile(args.parquet), f"Provided parquet '{args.parquet}' not found"
         DATA_SOURCE = pl.scan_parquet(args.parquet)
         full_schema = DATA_SOURCE.collect_schema()
         all_ann_cols = [ c for c in full_schema.names() if c.startswith('info_') ]
@@ -76,7 +78,7 @@ def main():
         # WARN: Bellow 'full_schema' only contains ANN cols...
         full_schema = lake_schema(args.lake)
         GT_cols = [ f"format_{s}_GT" for s in args.input ]
-        if args.config and osp.isfile(args.config) and 'col_selection' in conf.keys():
+        if config_OK and 'col_selection' in conf.keys():
             cols_list = selected_cols
         else:
             cols_list = full_schema.names()
@@ -107,7 +109,7 @@ def main():
     wanted_cols = ["#CHROMPOSREFALT"]
     wanted_cols += GT_cols
 
-    if args.config and osp.isfile(args.config) and 'col_selection' in conf.keys():
+    if config_OK and 'col_selection' in conf.keys():
         wanted_cols += selected_cols
     else:
         wanted_cols += all_ann_cols
@@ -115,7 +117,7 @@ def main():
    # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
     #       -> Have to use '.list.join' + '.cast' to have proper sort
     # WARN2: Cast works only for int score (what about 'float' score)
-    if args.config and osp.isfile(args.config) and 'sort' in conf.keys():
+    if config_OK and 'sort' in conf.keys():
         if full_schema[conf['sort'][0]] == pl.List(str):
             # First join list(str) -> str, then cast to int
             DATA_SOURCE = DATA_SOURCE.with_columns(
@@ -166,7 +168,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             a_col["cellRenderer"] = "chrPosRefAltLink"
 
     # Add tooltips:
-    if args.config and osp.isfile(args.config) and 'agg_in_tooltip' in conf.keys():
+    if config_OK and 'agg_in_tooltip' in conf.keys():
         ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
         to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
         for a_col in columnDefs:
