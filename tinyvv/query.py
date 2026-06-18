@@ -2,6 +2,10 @@ import polars as pl
 import os.path as osp
 
 
+def lake_schema(LAKE):
+    return pl.scan_parquet(f'{LAKE}/annotations/*').collect_schema()
+
+
 def lake_data(LAKE, samples_list, cols_list=None):
     list_in = [f"{LAKE}/genotypes/samples/{s}.parquet" for s in samples_list]
     sample_parquets = { f"{osp.splitext(osp.basename(x))[0]}":pl.scan_parquet(x) for x in list_in }
