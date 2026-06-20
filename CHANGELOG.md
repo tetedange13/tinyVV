@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
-## [0.5.0] - unreleased
+## [0.5.0] - 2026-06-20
 
 ### Changed
 
@@ -40,7 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Run from parquet lake built with [VariantPlaner](https://seqoia-it.github.io/variantplaner/) (`-l/--lake` + `-i/--input`)
+- Run from a parquets lake built with [VariantPlaner](https://seqoia-it.github.io/variantplaner/) (`-l/--lake` + `-i/--input`)
+- Example files + build script for 'parquets lake' usage
 
 <br>
 
