@@ -3,11 +3,11 @@
 
 
 ## Intro
-TinyVV will automatically look for a companion YAML file called `sample.yaml` near input `sample.parquet`
+TinyVV can take a companion YAML file used for customization
 
-This file is completely optional and TinyVV will work even if not found
+This file is completely optional and TinyVV will work without it
 
-Under `example` sub-dir, there is a YAML detailing use cases
+`examples/single_parquet/INPUT_hg19_annovar_MPA.yaml` is an example of all use cases
 
 <br>
 
@@ -15,12 +15,14 @@ Under `example` sub-dir, there is a YAML detailing use cases
 
 Customization is reserved to "INFO" columns
 
-Columns like `CHROM`, `POS` or `GT` are customized inside `TinyVV` main code
+Columns like `CHROM`, `POS` or `GT` are customized inside `TinyVV` core code
 
-To show columns available for customization, run:
+To show columns available for customization, use `-s/--show_cols` argument with your input, for example:
 
 ```
-python -m tinyvv --list_cols
+python -m tinyvv \
+    --parquet examples/single_parquet/INPUT_hg19_annovar_MPA.parquet \
+    --show_cols
 ```
 
 <br>
@@ -36,12 +38,12 @@ Expects a list :
 Only 1 col name is supported in this section
 
 WARN: Currently `int` scores are supported
+
 WARN2: Sorting is done on full dataset so can take long -> better sort your parquet BEFORE
 
 ### agg_in_tooltip
 
-Expects a col name (**NOT** as a list), that will be the one that exhibit the tooltip
-And for this col name a list of columns 
+Expects a col name (**NOT** as a list), that will be the one that exhibit the tooltip. And for this col name a list of columns
 
 Multiple "tooltipped columns" can be specified
 
@@ -50,6 +52,6 @@ Multiple "tooltipped columns" can be specified
 
 Expects a list of columns
 
-Order will be preserved when show in `TinyVV`
+Order will be preserved when shown in `TinyVV`
 
 All columns declared in `agg_in_tooltip` are automatically added too
