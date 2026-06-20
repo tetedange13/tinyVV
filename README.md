@@ -48,16 +48,16 @@ conda activate tinyVV
 If starting from a VCF, first convert it to parquet with `vcf2parquet` (included in env):
 ```
 vcf2parquet \
-    -i examples/INPUT_hg19_annovar_MPA.vcf.gz \
+    -i examples/single_parquet/INPUT_hg19_annovar_MPA.vcf.gz \
     convert \
-    -o examples/INPUT_hg19_annovar_MPA.parquet
+    -o examples/single_parquet/INPUT_hg19_annovar_MPA.parquet
 ```
 
 Then start app and open it your favorite Web browser:
 ```
 python -m tinyvv \
-    --parquet examples/INPUT_hg19_annovar_MPA.parquet \
-    -c examples/INPUT_hg19_annovar_MPA.yaml \
+    --parquet examples/single_parquet/INPUT_hg19_annovar_MPA.parquet \
+    --config examples/single_parquet/INPUT_hg19_annovar_MPA.yaml \
     --build hg19
 
 # Open URL in browser: http://127.0.0.1:8050/
