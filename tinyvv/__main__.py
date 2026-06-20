@@ -88,6 +88,7 @@ def main():
 
     # FROM HERE: should be independent of input type (lake or single pq)
     if args.show_cols:
+        logger.info("List INFO columns and exit:")
         [print(col) for col in all_ann_cols]
         exit()
 
