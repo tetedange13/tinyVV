@@ -3,7 +3,7 @@ import os.path as osp
 
 
 def lake_schema(LAKE):
-    return pl.scan_parquet(f'{LAKE}/annotations/*').collect_schema()
+    return pl.scan_parquet(f'{LAKE}/annotations/*.parquet').collect_schema()
 
 
 def lake_data(LAKE, samples_list, cols_list=None):
@@ -12,8 +12,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
 
     # Same but add 'variants' and 'ann' for context passing:
     all_parquets = { f"{osp.splitext(osp.basename(x))[0]}":pl.scan_parquet(x) for x in list_in }
-    all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*')
-    all_parquets["ann"] = pl.scan_parquet(f'{LAKE}/annotations/*')
+    all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
+    all_parquets["ann"] = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
 
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)
