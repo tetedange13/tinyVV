@@ -87,9 +87,22 @@ python -m tinyvv \
 
 ### Lake of parquets
 
-First you need to build your lake, you can use `build_lake.sh` to build an example one. This scripts show some of the commands to use
+First you need to build your lake. We provide `bin/build_lake.sh` for that, and provide example VCFs you can build a lake from
+```
+bash bin/build_lake.sh examples/parquets_lake
+```
 
-Detailed steps can be found in the documentation (TODO)
+This scripts also show the main `variantplanner` commands to use.
+They are taken from the [VariantPlaner documentation](https://seqoia-it.github.io/variantplaner/usage/)
+
+Then visualize your samples:
+```
+python -m tinyvv \
+    --lake examples/parquets_lake \
+    -i B00GMSH B00GMSI B00GMSJ \
+    --config examples/parquets_lake/INPUT_lake.yaml \
+    --build hg19
+```
 
 <br>
 
