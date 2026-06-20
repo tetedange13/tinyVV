@@ -1,59 +1,44 @@
-# Variant-planner
+#!/usr/bin/env bash
 
-cd lake
+set -euo pipefail
 
+LAKE_PATH=$1
+cd $LAKE_PATH
+
+
+# Convert VCFs to parquet:
+# There are split between 'variants' and 'genotypes'
+# All linked by an ID representing each variant
 mkdir -p variants genotypes/samples/
 
-
-# Split 'INPUT_hg19_annovar_MPA.vcf.gz' by sample:
-sampl=B00GMSJ && \
-	bcftools view -s $sampl examples/*vcf.gz 2> /dev/null | bcftools view -i 'GT="alt"' -Oz -o ${sampl}.vcf.gz
-
-# And the same for remaining 2
-
-
-# Convert to parquet:
-ls -d ../examples/B*gz |
-	xargs basename -a -s .vcf.gz |
-	parallel --dry-run \
-		"variantplaner -t 4 vcf2parquet -i ../examples/{}.vcf.gz variants -o variants/{/}.parquet genotypes -o genotypes/samples/{/}.parquet"
+# WARN: Bellow expects a 'vcf' subdir, with VCFs to convert
+for vcf_path in $(ls vcf/*.vcf.gz)
+do
+    sample_name=$(basename ${vcf_path} .vcf.gz)
+    variantplaner vcf2parquet -i ${vcf_path} \
+    	variants -o variants/${sample_name}.parquet \
+    	genotypes -o genotypes/samples/${sample_name}.parquet
+	echo "Wrote: 'variants/${sample_name}.parquet' and: 'genotypes/samples/${sample_name}.parquet'"
+done
 
 
-# Merge variants
-variantplaner -t 8 struct -i variants/*.parquet -- variants -o uniq_variants/
-
-
-# Organise GT by variants:
-mkdir -p genotypes/variants/ # -> Useless ? Dir is actually 'genotypes/partitions' ???
-variantplaner -t 8 struct -i genotypes/samples/*.parquet -- genotypes -p genotypes/partitions
+# Compute parquets with all uniq variants (for annotation):
+# VariantPlanner split them by chromosomes by default
+variantplaner struct -i variants/*.parquet -- \
+	variants -o uniq_variants/
+echo "Wrote: $(ls -d uniq_variants/*)"
 
 
 # Add annotations:
-# MEMO: With Annovar each annot is an INFO key -> can reuse original VCF ?
-#       -> but 1st remove FORMAT ('cut -f1-8'), otherwise vcf2pq keep them
-# MEMO2: Could do bellow with 'bcftools annotate', but '-x FORMAT/GT' set entries to '.' without removing
-# MEMO3: No need for '-c' if chr len are in VCF header ?
-#
-bcftools view ../examples/INPUT_hg19_annovar_MPA.vcf.gz |
-	cut -f1-8 | bcftools view -Oz -o examples/annovar_MPA.vcf.gz
+# At this step normally to should annotate 'uniq_variants/*' with your favorite annotator
+# For this example we reuse Annovar annotations already present
+# MEMO: For SnpEff and VEP, annotations are nested and should be splitted first
+#       (not for Annovar which put each thing in an INFO key)
+# 'grch38.92.csv' is simply a file with length of each chromosome
+# It is advised to use it (but not mandatory)
 variantplaner -t 4 vcf2parquet \
 	-c grch38.92.csv \
-	-i ../examples/annovar_MPA.vcf.gz \
+	-i annotations/annovar_MPA.vcf.gz \
 	annotations -o annotations/annovar_MPA.parquet \
 	--rename-id annovar_id
-
-
-# SQL (D = duckDB):
-
-## Compter l'occurrence de chaque variant
-D select id id,count(*) from read_parquet('genotypes/samples/*') group by id;
-
-### -> Voir si ça scale
-### -> Sinon ne le faire a la volee que pour les variants de la 'view' ('WHERE id==')
-### -> Afficher 'chr-pos-ref-alt' plutot que l'id -> JOIN avec 'uniq_variants/chr1.parquet' ?
-
-
-## Reafficher la table d'origine a partir du lake
-### WARN: ca me met les gt,dp etc dans des listes
-###       -> Mais je dois pouvoir re-generer en faisant 'sample1:g1, sample2:gt2'
-D SELECT s.id,first(COLUMNS(v.*)),first(COLUMNS(a.*)),list(COLUMNS(['sample','gt','dp']) order by sample asc),list(gt order by sample asc) FROM read_parquet('genotypes/samples/*') as s left join read_parquet('uniq_variants/*') as v on s.id=v.id left join read_parquet('annotations/*') as a on s.id=a.id GROUP BY s.id ;
+echo "Wrote: 'annotations/annovar_MPA.parquet'"
