@@ -23,8 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Build on a lake of parquets using [variantplaner](https://github.com/SeqOIA-IT/variantplaner)
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
+- Put all FORMAT data in 1st GT col ? (same as Achab)
+- Add "case depth" and "case AB" cols ?
+- Use "shrink_dtype" to solve problem of "List(str)" cols ? NO cuz do not run on lazyFrame
+
+<br>
+
+## [0.5.0] - 2026-06-20
+
+### Changed
+
+- Previous parameter `-i/--input` turned into `-p/--parquet`
+- Config not guessed ("sample.yaml") anymore, should be passed to `-c/--config`
+- Previous argument `-l/--list_cols` (to list columns and exit) renamed as `-s/--show_cols`
+
+### Added
+
+- Run from a parquets lake built with [VariantPlaner](https://seqoia-it.github.io/variantplaner/) (`-l/--lake` + `-i/--input`)
+- Example files + build script for 'parquets lake' usage
 
 <br>
 

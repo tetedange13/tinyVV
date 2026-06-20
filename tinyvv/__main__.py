@@ -8,6 +8,7 @@ import yaml
 from .filtering import make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
 from .utils import parse_args, nice_dict
+from .query import lake_data, lake_schema
 logger = logging.getLogger(__name__)
 
 
@@ -16,6 +17,7 @@ def main():
     #Output to log file:
     #logging.basicConfig(filename='tinyvv.log', level=logging.DEBUG)
     logging.basicConfig(level=logging.DEBUG)
+
 
     def scan_ldf(
         filter_model=None,
@@ -40,49 +42,66 @@ def main():
     # Parse arguments:
     args = parse_args()
 
-    in_parquet_path = args.input
-    root_path = osp.splitext(in_parquet_path)[0]
-    attached_yaml = root_path + '.yaml'
-    if osp.isfile(attached_yaml):
+    config_OK = args.config and osp.isfile(args.config)
+    if config_OK:
         logging.info("Found 'sample.yaml' -> loading conf")
-        with open(attached_yaml, 'r') as conf_file:
+        with open(args.config, 'r') as conf_file:
             conf = yaml.safe_load(conf_file)
         logging.debug(nice_dict(conf))
-
     else:
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
 
-    DATA_SOURCE = pl.scan_parquet(in_parquet_path)
+    # Add columns selected by user:
+    if config_OK and 'col_selection' in conf.keys():
+        selected_cols = conf['col_selection']
+        # Also add cols declared in 'agg_in_tooltip' section:
+        if 'agg_in_tooltip' in conf.keys():
+            selected_cols += conf['agg_in_tooltip'].keys()
+            selected_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
+            selected_cols = list(dict.fromkeys(selected_cols))  # De-duplicate
+        # Do we need to add col from 'sort' section ???
 
-    full_schema = DATA_SOURCE.collect_schema()
-    all_cols = full_schema.names()
+    # Add/process cols depending on input type:
+    if args.parquet:  # Single pq input
+        assert osp.isfile(args.parquet), f"Provided parquet '{args.parquet}' not found"
+        DATA_SOURCE = pl.scan_parquet(args.parquet)
+        full_schema = DATA_SOURCE.collect_schema()
+        all_ann_cols = [ c for c in full_schema.names() if c.startswith('info_') ]
+        # Find genotype columns by their name:
+        GT_cols = [ c for c in full_schema.names() if c.startswith('format_') and c.endswith('_GT') ]
+        # Fix cols:
+        DATA_SOURCE = DATA_SOURCE.with_columns(
+            pl.col("alternate").list.join(separator="")
+            )
 
-    if args.list_cols:
-        [print(col) for col in all_cols if col.startswith('info_')]
+    elif args.input:  # Lake input
+        # WARN: Bellow 'full_schema' only contains ANN cols...
+        full_schema = lake_schema(args.lake)
+        all_ann_cols = [c for c in full_schema.names() if not c.endswith('id')]
+        GT_cols = [ f"format_{s}_GT" for s in args.input ]
+        if config_OK and 'col_selection' in conf.keys():
+            cols_list = selected_cols
+        else:
+            cols_list = all_ann_cols
+        DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
+
+
+    # FROM HERE: should be independent of input type (lake or single pq)
+    if args.show_cols:
+        logger.info("List INFO columns and exit:")
+        [print(col) for col in all_ann_cols]
         exit()
-
-    # Find genotype columns by their name:
-    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
-    GT_cols = []
-    for a_col in all_cols:
-        if a_col.startswith('format_') and a_col.endswith('_GT'):
-            GT_cols.append(a_col)
 
     # Create 'chr-pos-ref-alt' col:
     to_concat = [
         'chromosome',
         'position',
         'reference',
-        'alternate'
+        'alternate',
     ]
     DATA_SOURCE = DATA_SOURCE.with_columns(
         pl.concat_str(
-            [
-                "chromosome",
-                "position",
-                "reference",
-                pl.col("alternate").list.join(separator="")
-            ],
+            to_concat,
             separator="-"
         ).alias("#CHROMPOSREFALT")
     ).drop(to_concat)
@@ -92,22 +111,15 @@ def main():
     wanted_cols = ["#CHROMPOSREFALT"]
     wanted_cols += GT_cols
 
-    # Add columns selected by user:
-    if osp.isfile(attached_yaml) and 'col_selection' in conf.keys():
-        wanted_cols += conf['col_selection']
-        # Also add cols declared in 'agg_in_tooltip' section:
-        if 'agg_in_tooltip' in conf.keys():
-            wanted_cols += conf['agg_in_tooltip'].keys()
-            wanted_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
-            wanted_cols = list(dict.fromkeys(wanted_cols))  # De-duplicate
-        # Do we need to add col from 'sort' section ???
-    else:  # Default to all 'info' cols
-        wanted_cols += [ c for c in all_cols if c.startswith('info_')]
+    if config_OK and 'col_selection' in conf.keys():
+        wanted_cols += selected_cols
+    else:
+        wanted_cols += all_ann_cols
 
-    # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
+   # WARN: vcf2pq puts 'list[str]' dtype for all INFO cols...
     #       -> Have to use '.list.join' + '.cast' to have proper sort
     # WARN2: Cast works only for int score (what about 'float' score)
-    if osp.isfile(attached_yaml) and 'sort' in conf.keys():
+    if config_OK and 'sort' in conf.keys():
         if full_schema[conf['sort'][0]] == pl.List(str):
             # First join list(str) -> str, then cast to int
             DATA_SOURCE = DATA_SOURCE.with_columns(
@@ -129,6 +141,7 @@ def main():
     columnDefs=[{"field": i} for i in wanted_cols]
 
     # Color GT cols:
+    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
     for a_col in columnDefs:
         if a_col["field"] in GT_cols:
             a_col["cellStyle"] = colorize_GT()
@@ -157,7 +170,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             a_col["cellRenderer"] = "chrPosRefAltLink"
 
     # Add tooltips:
-    if osp.isfile(attached_yaml) and 'agg_in_tooltip' in conf.keys():
+    if config_OK and 'agg_in_tooltip' in conf.keys():
         ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
         to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
         for a_col in columnDefs:
