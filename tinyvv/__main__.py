@@ -65,14 +65,19 @@ def main():
     if args.parquet:  # Single pq input
         assert osp.isfile(args.parquet), f"Provided parquet '{args.parquet}' not found"
         DATA_SOURCE = pl.scan_parquet(args.parquet)
-        # Rename cols with '.' inside, cuz not supported:
-        rename_dict = {c:c.replace('.', '_') for c in DATA_SOURCE.collect_schema().names() if '.' in c}
+        # Collect original colnames 1st, to discriminate INFO cols:
+        original_colnames = DATA_SOURCE.collect_schema().names()
+        # Can also get genotype columns by their name:
+        GT_cols = [ c for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]        # Rename cols with '.' inside, cuz not supported:
+        # Then rename cols with '.' inside, cuz not supported:
+        # Also remove 'info_' prefix at the same time
+        rename_dict = {c:c.replace('.', '_').replace('info_', '') for c in original_colnames}
         DATA_SOURCE = DATA_SOURCE.rename(rename_dict)
-        # Get INFO cols:
+        # Collect new renamed schema:
         full_schema = DATA_SOURCE.collect_schema()
-        all_ann_cols = [ c for c in full_schema.names() if c.startswith('info_') ]
-        # Find genotype columns by their name:
-        GT_cols = [ c for c in full_schema.names() if c.startswith('format_') and c.endswith('_GT') ]
+        # List of INFO cols (with their new names):
+        all_ann_cols = [c.replace('.', '_').replace('info_', '') for c in original_colnames if c.startswith('info_')]
+
         # Fix cols:
         DATA_SOURCE = DATA_SOURCE.with_columns(
             pl.col("alternate").list.join(separator="")

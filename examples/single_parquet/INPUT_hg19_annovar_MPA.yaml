@@ -1,20 +1,20 @@
 sort:
-  - info_MPA_ranking
+  - MPA_ranking
   - False
 
 col_selection:
-  - info_MPA_ranking
-  - info_MPA_impact
-  - info_Gene_refGene
-  - info_gnomAD_exome_ALL
-  - info_gnomAD_genome_ALL
-  - info_CLNSIG
-  - info_InterVar_automated
+  - MPA_ranking
+  - MPA_impact
+  - Gene_refGene
+  - gnomAD_exome_ALL
+  - gnomAD_genome_ALL
+  - CLNSIG
+  - InterVar_automated
 
 agg_in_tooltip:
-  info_gnomAD_exome_ALL:
-    - info_gnomAD_exome_AFR
-    - info_gnomAD_exome_AMR
-  info_gnomAD_genome_ALL:
-    - info_gnomAD_genome_AFR
-    - info_gnomAD_genome_AMR
+  gnomAD_exome_ALL:
+    - gnomAD_exome_AFR
+    - gnomAD_exome_AMR
+  gnomAD_genome_ALL:
+    - gnomAD_genome_AFR
+    - gnomAD_genome_AMR
