@@ -30,6 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [0.5.1] - Unreleased
+
+### Fixed
+
+- Renamed columns with containing a dot '.', it is causing issues with Dash and/or Polars
+
+### Changed
+
+- [single_parquet] Remove "info_" prefix in colnames (coherent with "parquets_lake" now)
+
+<br>
+
 ## [0.5.0] - 2026-06-20
 
 ### Changed
