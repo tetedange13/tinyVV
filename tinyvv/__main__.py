@@ -145,7 +145,8 @@ def main():
 
     # Bellow is a kind of assert (FAIL if selected wrong cols):
     logger.info("Show first 10 rows of data:")
-    print(DATA_SOURCE.head().collect())
+    head_of_data = DATA_SOURCE.head().collect()
+    logger.info(head_of_data)
 
     columnDefs=[{"field": i} for i in wanted_cols]
 
