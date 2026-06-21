@@ -3,7 +3,10 @@ import os.path as osp
 
 
 def lake_schema(LAKE):
-    return pl.scan_parquet(f'{LAKE}/annotations/*.parquet').collect_schema()
+    ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
+    # Rename cols with '.' inside, cuz not supported:
+    rename_dict = {c:c.replace('.', '_') for c in ann.collect_schema().names() if '.' in c}
+    return ann.rename(rename_dict).collect_schema()
 
 
 def lake_data(LAKE, samples_list, cols_list=None):
@@ -13,7 +16,11 @@ def lake_data(LAKE, samples_list, cols_list=None):
     # Same but add 'variants' and 'ann' for context passing:
     all_parquets = { f"{osp.splitext(osp.basename(x))[0]}":pl.scan_parquet(x) for x in list_in }
     all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
-    all_parquets["ann"] = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
+
+    # Same for annot but 1st rename cols with '.' inside, cuz not supported:
+    ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
+    rename_dict = {c:c.replace('.', '_') for c in ann.collect_schema().names() if '.' in c}
+    all_parquets["ann"] = ann.rename(rename_dict)
 
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)

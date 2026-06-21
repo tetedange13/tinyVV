@@ -5,7 +5,7 @@ sort:
 col_selection:
   - info_MPA_ranking
   - info_MPA_impact
-  - info_Gene.refGene
+  - info_Gene_refGene
   - info_gnomAD_exome_ALL
   - info_gnomAD_genome_ALL
   - info_CLNSIG

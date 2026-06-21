@@ -65,6 +65,10 @@ def main():
     if args.parquet:  # Single pq input
         assert osp.isfile(args.parquet), f"Provided parquet '{args.parquet}' not found"
         DATA_SOURCE = pl.scan_parquet(args.parquet)
+        # Rename cols with '.' inside, cuz not supported:
+        rename_dict = {c:c.replace('.', '_') for c in DATA_SOURCE.collect_schema().names() if '.' in c}
+        DATA_SOURCE = DATA_SOURCE.rename(rename_dict)
+        # Get INFO cols:
         full_schema = DATA_SOURCE.collect_schema()
         all_ann_cols = [ c for c in full_schema.names() if c.startswith('info_') ]
         # Find genotype columns by their name:

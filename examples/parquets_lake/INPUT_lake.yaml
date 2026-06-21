@@ -5,6 +5,7 @@ sort:
 col_selection:
   - MPA_ranking
   - MPA_impact
+  - Gene_refGene
   - gnomAD_exome_ALL
   - gnomAD_genome_ALL
   - CLNSIG
