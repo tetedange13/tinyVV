@@ -7,10 +7,10 @@ channels:
 dependencies:
   - python=3.12
   - pip=25.1
-  - bioconda::vcf2parquet=0.5
+  - bioconda::vcf2parquet=0.5  # Still needed even with 'variantplaner', cuz used for single pq
   - bioconda::bcftools
   - pip:
     - dash_ag_grid<=35.2
-    - polars<=1.31
+    - polars<=1.41  # For SQL 'STRING_AGG()'
     - pyyaml  # Do NOT specify version
     - git+https://github.com/SeqOIA-IT/variantplaner.git@0.5.2
