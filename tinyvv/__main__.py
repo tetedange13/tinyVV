@@ -240,14 +240,14 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             return no_update
         columns = [col["field"] for col in columnDefs]
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
-        partial = ldf[request["startRow"] : request["endRow"]].collect()
         # Count rows after filter, but handle case where filter return nothing:
         rows_count_df = ldf.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect()
         if rows_count_df.shape[0] == 0:
             rows_count = 0
         else:
             rows_count = rows_count_df.item()
-
+        logger.debug(f"Nb rows after filtering: {rows_count}")
+        partial = ldf[request["startRow"] : request["endRow"]].collect()
         return {
             "rowData": partial.to_dicts(),
             "rowCount": rows_count,
