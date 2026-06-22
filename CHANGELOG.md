@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - [single_parquet] Remove "info_" prefix in colnames (coherent with "parquets_lake" now)
+- [parquets_lake] Full join of GT now, not left join from 1st one
 
 <br>
 

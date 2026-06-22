@@ -31,12 +31,23 @@ def lake_data(LAKE, samples_list, cols_list=None):
         ann_cols = ','.join([a for a in cols_list])
     else:
         ann_cols = ','.join([a for a in all_parquets["ann"].collect_schema().names() if not a.endswith('id')])
-    join_other_samples = '\n'.join([ f"LEFT JOIN {other} ON {first_sample}.id={other}.id" for other in list(sample_parquets.keys())[1:] ])
-
+    union_all_samples = '\n'.join([ f"UNION SELECT id FROM {other}" for other in list(sample_parquets.keys())[1:] ])
+    join_gt_samples = '\n'.join([ f"LEFT JOIN {other} ON id={other}.id" for other in list(sample_parquets.keys()) ])
     # MEMOs:
     # * Diff colnames between variantplan and vcf2pq (colname vs info_colname)
     # * Cols like "info_Gene.refGene" raise and error (caused by '.')
+    # * Intermediate query collect all uniq variants id for requested samples
+    #   For later 'LEFT JOIN' -> result in a 'FULL JOIN'
+    # * UNION result is random, not sure why
+    #   -> ENH, do it with pl.Df.unique() instead ?
     query_lf = f"""
+    WITH cte_gt AS (
+        SELECT
+            id,
+        FROM {first_sample}
+            {union_all_samples}
+    )
+
     SELECT
         chr as chromosome,
         pos AS position,
@@ -44,12 +55,13 @@ def lake_data(LAKE, samples_list, cols_list=None):
         alt AS alternate,
         {gt_cols},
         {ann_cols},
-    FROM {first_sample}
-    {join_other_samples}
+
+        FROM cte_gt
+        {join_gt_samples}
             LEFT JOIN v
-            ON {first_sample}.id=v.id
+            ON id=v.id
             LEFT JOIN ann
-            ON {first_sample}.id=ann.id
+            ON id=ann.id
     """
     print(query_lf)
     return ctx.execute(query_lf)
