@@ -8,7 +8,7 @@ import yaml
 from .filtering import make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
 from .utils import parse_args, nice_dict
-from .query import lake_data, lake_schema
+from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
 
 
