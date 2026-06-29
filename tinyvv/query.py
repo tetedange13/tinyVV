@@ -65,3 +65,20 @@ def lake_data(LAKE, samples_list, cols_list=None):
     """
     print(query_lf)
     return ctx.execute(query_lf)
+
+
+def count_occurr(LAKE):
+    # Compute occurrences of all variants from all samples in lake
+    # ENH: Do it on 'variants/*.parquet' instead ?
+    #      This way could have 'chr,pos,ref,alt' too
+    all_samples = pl.scan_parquet(f"{LAKE}/genotypes/samples/*.parquet")
+
+    ctx = pl.SQLContext(frames={'all_samples': all_samples})
+    query_occurr = """
+    SELECT
+        id id,count(*)
+    FROM all_samples
+    GROUP BY id;
+    """
+    print(query_occurr)
+    return ctx.execute(query_occurr)
