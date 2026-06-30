@@ -10,15 +10,30 @@ def lake_schema(LAKE):
 
 
 def lake_data(LAKE, samples_list, cols_list=None):
-    list_in = [f"{LAKE}/genotypes/samples/{s}.parquet" for s in samples_list]
-    sample_parquets = { f"{osp.splitext(osp.basename(x))[0]}":pl.scan_parquet(x) for x in list_in }
+    # Build a list of 'genotypes' pq, with renamed cols for join:
+    pqs_list = []
+    for s in samples_list:
+        pq_path = f"{LAKE}/genotypes/samples/{s}.parquet"
+        selected_cols = ['id','gt', 'ad']
+        rename_dict = { c:f'format_{s}_{c.upper()}' for c in selected_cols if c != 'id' }
+        pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
+        pqs_list.append(pq_to_join)
 
-    # Same but add 'variants' and 'ann' for context passing:
-    all_parquets = { f"{osp.splitext(osp.basename(x))[0]}":pl.scan_parquet(x) for x in list_in }
+    # Full join on id:
+    # ENH: Find a way to do that in SQL bellow ???
+    joint_gt = pqs_list[0]  # Init to 1st pq
+    for pq in pqs_list[1:]:
+        joint_gt = joint_gt.join(
+            pq,
+            how='full',
+            on='id',
+            coalesce=True,
+            maintain_order='left_right'
+        )
+    all_parquets = { 'joint_gt': joint_gt }
+
+    # Add 'variants' for context passing:
     all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
-    # MEMO: Reading multiple pq concat them (vertically)
-    all_parquets["concat"] = pl.scan_parquet(list_in).select('id')
-
     # Same for annot but 1st rename cols with '.' inside, cuz not supported:
     ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
     rename_dict = {c:c.replace('.', '_') for c in ann.collect_schema().names() if '.' in c}
@@ -27,26 +42,13 @@ def lake_data(LAKE, samples_list, cols_list=None):
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)
     
-    gt_cols = ','.join([f"{x}.gt AS format_{x}_GT" for x in sample_parquets.keys()])
+    gt_cols = ','.join([f"format_{x}_GT" for x in samples_list])
     if cols_list:
         ann_cols = ','.join([a for a in cols_list])
     else:
         ann_cols = ','.join([a for a in all_parquets["ann"].collect_schema().names() if not a.endswith('id')])
-    join_gt_samples = '\n'.join([ f"LEFT JOIN {other} ON id={other}.id" for other in list(sample_parquets.keys()) ])
-    # MEMOs:
-    # * Diff colnames between variantplan and vcf2pq (colname vs info_colname)
-    # * Cols like "info_Gene.refGene" raise and error (caused by '.')
-    # * Intermediate query collect all uniq variants id for requested samples
-    #   For later 'LEFT JOIN' -> result in a 'FULL JOIN'
-    # * UNION result is random, not sure why
-    #   -> ENH, do it with pl.Df.unique() instead ?
-    query_lf = f"""
-    WITH cte_gt AS (
-        SELECT
-            DISTINCT id,
-        FROM concat
-    )
 
+    query_lf = f"""
     SELECT
         chr as chromosome,
         pos AS position,
@@ -55,8 +57,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
         {gt_cols},
         {ann_cols},
 
-        FROM cte_gt
-        {join_gt_samples}
+        FROM joint_gt
             LEFT JOIN v
             ON id=v.id
             LEFT JOIN ann
