@@ -16,6 +16,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
     # Same but add 'variants' and 'ann' for context passing:
     all_parquets = { f"{osp.splitext(osp.basename(x))[0]}":pl.scan_parquet(x) for x in list_in }
     all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
+    # MEMO: Reading multiple pq concat them (vertically)
+    all_parquets["concat"] = pl.scan_parquet(list_in).select('id')
 
     # Same for annot but 1st rename cols with '.' inside, cuz not supported:
     ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
@@ -25,13 +27,11 @@ def lake_data(LAKE, samples_list, cols_list=None):
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)
     
-    first_sample = list(sample_parquets.keys())[0]
     gt_cols = ','.join([f"{x}.gt AS format_{x}_GT" for x in sample_parquets.keys()])
     if cols_list:
         ann_cols = ','.join([a for a in cols_list])
     else:
         ann_cols = ','.join([a for a in all_parquets["ann"].collect_schema().names() if not a.endswith('id')])
-    union_all_samples = '\n'.join([ f"UNION SELECT id FROM {other}" for other in list(sample_parquets.keys())[1:] ])
     join_gt_samples = '\n'.join([ f"LEFT JOIN {other} ON id={other}.id" for other in list(sample_parquets.keys()) ])
     # MEMOs:
     # * Diff colnames between variantplan and vcf2pq (colname vs info_colname)
@@ -43,9 +43,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
     query_lf = f"""
     WITH cte_gt AS (
         SELECT
-            id,
-        FROM {first_sample}
-            {union_all_samples}
+            DISTINCT id,
+        FROM concat
     )
 
     SELECT
