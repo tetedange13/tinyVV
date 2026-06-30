@@ -112,7 +112,6 @@ python -m tinyvv \
 - Multiple columns are of type `list[str]` which fails most "text" filters (Polars error: `expected String type, got: list[str]`)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
 - [parquets_lake] GT are shown as "0 ; 1 ; 2" (vs 0/0, 0/1, 1/1 in "single_pq" input)
-- [parquets_lake] Rows order is random if no "sort" in conf (due to random order in UNION BY id)
 - [parquets_lake] Empty values in ANN are shown as '.' (vs null in "single_pq" input)
 
 <br>
