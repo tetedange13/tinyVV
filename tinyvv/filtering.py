@@ -1,20 +1,28 @@
 import polars as pl
+from polars.exceptions import PolarsError, InvalidOperationError
+
+
+def convert_list_str(colname):
+    # ENH: Use schema's dtypes ?
+    #      Or define 'filter':'agNumberColumnFilter' for cols u8 ?
+    return pl.col(colname).list.join(separator="")
 
 
 def parse_column_filter(filter_obj, col_name):
    """Build a polars filter expression based on the filter object"""
+
+   # First convert if type == 'list(str):
+   converted_col = convert_list_str(col_name)
+
    if filter_obj["filterType"] == "set":
        expr = None
        for val in filter_obj["values"]:
-           expr |= pl.col(col_name).cast(pl.Utf8).cast(pl.Categorical) == val
+           expr |= converted_col.cast(pl.Utf8).cast(pl.Categorical) == val
    else:
        if filter_obj["filterType"] == "date":
            crit1 = filter_obj["dateFrom"]
-
-
            if "dateTo" in filter_obj:
                crit2 = filter_obj["dateTo"]
-
 
        else:
            if "filter" in filter_obj:
@@ -25,69 +33,69 @@ def parse_column_filter(filter_obj, col_name):
 
        if filter_obj["type"] == "contains":
            lower = (crit1).lower()
-           expr = pl.col(col_name).str.to_lowercase().str.contains(lower)
+           expr = converted_col.str.to_lowercase().str.contains(lower)
 
 
        elif filter_obj["type"] == "notContains":
            lower = (crit1).lower()
-           expr = ~pl.col(col_name).str.to_lowercase().str.contains(lower)
+           expr = ~converted_col.str.to_lowercase().str.contains(lower)
        elif filter_obj["type"] == "startsWith":
            lower = (crit1).lower()
-           expr = pl.col(col_name).str.starts_with(lower)
+           expr = converted_col.str.starts_with(lower)
 
 
        elif filter_obj["type"] == "notStartsWith":
            lower = (crit1).lower()
-           expr = ~pl.col(col_name).str.starts_with(lower)
+           expr = ~converted_col.str.starts_with(lower)
 
 
        elif filter_obj["type"] == "endsWith":
            lower = (crit1).lower()
-           expr = pl.col(col_name).str.ends_with(lower)
+           expr = converted_col.str.ends_with(lower)
 
 
        elif filter_obj["type"] == "notEndsWith":
            lower = (crit1).lower()
-           expr = ~pl.col(col_name).str.ends_with(lower)
+           expr = ~converted_col.str.ends_with(lower)
 
 
        elif filter_obj["type"] == "blank":
-           expr = pl.col(col_name).is_null()
+           expr = converted_col.is_null()
 
 
        elif filter_obj["type"] == "notBlank":
-           expr = ~pl.col(col_name).is_null()
+           expr = ~converted_col.is_null()
 
 
        elif filter_obj["type"] == "equals":
-           expr = pl.col(col_name) == crit1
+           expr = converted_col == crit1
 
 
        elif filter_obj["type"] == "notEqual":
-           expr = pl.col(col_name) != crit1
+           expr = converted_col != crit1
 
 
        elif filter_obj["type"] == "lessThan":
-           expr = pl.col(col_name) < crit1
+           expr = converted_col < crit1
 
 
        elif filter_obj["type"] == "lessThanOrEqual":
-           expr = pl.col(col_name) <= crit1
+           expr = converted_col <= crit1
 
 
        elif filter_obj["type"] == "greaterThan":
-           expr = pl.col(col_name) > crit1
+           expr = converted_col > crit1
 
 
        elif filter_obj["type"] == "greaterThanOrEqual":
-           expr = pl.col(col_name) >= crit1
+           expr = converted_col >= crit1
 
 
        elif filter_obj["type"] == "inRange":
            if filter_obj["filterType"] == "date":
-               expr = (pl.col(col_name) >= crit1) & (pl.col(col_name) <= crit2)
+               expr = (converted_col >= crit1) & (converted_col <= crit2)
            else:
-               expr = (pl.col(col_name) >= crit1) & (pl.col(col_name) <= crit2)
+               expr = (converted_col >= crit1) & (converted_col <= crit2)
        else:
            None
 
