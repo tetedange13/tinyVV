@@ -198,7 +198,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation
-    #total_rows = DATA_SOURCE.select('chromosome').with_row_index().last().select('index').collect().item()
+    total_rows = DATA_SOURCE.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect().item()
 
     app = Dash()
 
@@ -215,8 +215,11 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                 },
                 rowModelType="infinite",
                 dashGridOptions={
+                    # Auto-height slow grid: https://www.ag-grid.com/javascript-data-grid/scrolling-performance/#avoid-auto-height
+                    "rowHeight": 42,
                     # The number of rows rendered outside the viewable area the grid renders.
-                    "rowBuffer": 0,
+                    # Default=10
+                    "rowBuffer": 50,
                     # How many blocks to keep in the store. Default is no limit, so every requested block is kept.
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
@@ -240,18 +243,18 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             return no_update
         columns = [col["field"] for col in columnDefs]
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
-        # Count rows after filter, but handle case where filter return nothing:
-        rows_count_df = ldf.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect()
-        if rows_count_df.shape[0] == 0:
-            rows_count = 0
-        else:
-            rows_count = rows_count_df.item()
-        logger.debug(f"Nb rows after filtering: {rows_count}")
         partial = ldf[request["startRow"] : request["endRow"]].collect()
-        return {
+        dict_data = {
             "rowData": partial.to_dicts(),
-            "rowCount": rows_count,
-        }, request["filterModel"]
+        }
+        rows_count = partial.shape[0]
+        # If no matching rows -> set to "0", otherwise leave undefined
+        if rows_count == 0:
+            dict_data["rowCount"] = 0
+        else:
+            dict_data["rowCount"] = total_rows
+        logger.debug(f"Nb rows after filtering: {rows_count}")
+        return dict_data, request["filterModel"]
 
     app.run(debug=False)
 
