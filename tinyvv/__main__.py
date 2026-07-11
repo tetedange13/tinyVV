@@ -82,12 +82,26 @@ def main():
         # WARN: Bellow 'full_schema' only contains ANN cols...
         full_schema = lake_schema(args.lake)
         all_ann_cols = [c for c in full_schema.names() if not c.endswith('id')]
-        GT_cols = [ f"format_{s}_GT" for s in args.input ]
         if config_OK and 'col_selection' in conf.keys():
             cols_list = selected_cols
         else:
             cols_list = all_ann_cols
         DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
+        # Define and fix gt_cols (1 -> 0/1 etc):
+        GT_cols = [ f"format_{s}_GT" for s in args.input ]
+        dict_gt = {"1":"0/1", "2":"1/1"}
+        for gt_col in GT_cols:
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                pl.col(gt_col).cast(str).replace(dict_gt)
+            )
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                pl.col(gt_col).fill_null("0/0")
+            )
+            # Convert to 'List(str)':
+            # ENH: Not very efficient to concat_list for later str.join('')
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                pl.concat_list([pl.col(gt_col)])
+            )
 
 
     # FROM HERE: should be independent of input type (lake or single pq)

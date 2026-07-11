@@ -2,6 +2,7 @@ import polars as pl
 
 
 def convert_list_str(colname):
+    # ENH: Use dtype from schema ???
     return pl.col(colname).list.join(separator="")
 
 
