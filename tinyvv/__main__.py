@@ -78,11 +78,6 @@ def main():
         # List of INFO cols (with their new names):
         all_ann_cols = [c.replace('.', '_').replace('info_', '') for c in original_colnames if c.startswith('info_')]
 
-        # Fix cols:
-        DATA_SOURCE = DATA_SOURCE.with_columns(
-            pl.col("alternate").list.join(separator="")
-            )
-
     elif args.input:  # Lake input
         # WARN: Bellow 'full_schema' only contains ANN cols...
         full_schema = lake_schema(args.lake)
