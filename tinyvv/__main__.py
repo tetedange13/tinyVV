@@ -97,18 +97,14 @@ def main():
         exit()
 
     # Create 'chr-pos-ref-alt' col:
-    to_concat = [
-        'chromosome',
-        'position',
-        'reference',
-        'alternate',
-    ]
     DATA_SOURCE = DATA_SOURCE.with_columns(
-        pl.concat_str(
-            to_concat,
-            separator="-"
-        ).alias("#CHROMPOSREFALT")
-    ).drop(to_concat)
+        pl.concat_list([
+            pl.col('chromosome') + '-',
+            pl.col('position').cast(str) + '-',
+            pl.col('reference') + '-',
+            pl.col('alternate'),
+        ]).alias("#CHROMPOSREFALT")
+    )
 
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
@@ -137,6 +133,11 @@ def main():
 
     else:
         DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
+
+    # Collect schema of final lf:
+    final_schema = DATA_SOURCE.collect_schema()
+    dict_schema = {k:str(final_schema[k]) for k in final_schema}
+    logger.debug(nice_dict(dict_schema))
 
     # Bellow is a kind of assert (FAIL if selected wrong cols):
     logger.info("Show first 10 rows of data:")
