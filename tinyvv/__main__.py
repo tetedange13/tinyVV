@@ -148,14 +148,6 @@ def main():
     head_of_data = DATA_SOURCE.head().collect()
     logger.info(head_of_data)
 
-    columnDefs=[{"field": i} for i in wanted_cols]
-
-    # Color GT cols:
-    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
-    for a_col in columnDefs:
-        if a_col["field"] in GT_cols:
-            a_col["cellStyle"] = colorize_GT()
-
     # Add hyperlink to 'chr-pos-ref-alt' col:
     # ENH: Use MobiDetails instead (API key required to query variant)
     # MEMO: 1st line declares customCompon and is common to tooltip compon
@@ -173,8 +165,17 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as compon_file:
         compon_file.write(custom_compon.replace('BUILD', args.build))
 
+
+    # Set colDefs properties
+    columnDefs=[{"field": i} for i in wanted_cols]
+
     # ENH: Do not parcours colDef twice
     for a_col in columnDefs:
+        if a_col["field"] in GT_cols:
+            # Color GT cols:
+            # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
+            a_col["cellStyle"] = colorize_GT()
+
         if a_col["field"] == "#CHROMPOSREFALT":
             # JS func defined in 'dashAgGridComponentFunctions.js':
             a_col["cellRenderer"] = "chrPosRefAltLink"
