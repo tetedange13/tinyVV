@@ -35,11 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Renamed columns with containing a dot '.', it is causing issues with Dash and/or Polars
+- Can filter on columns, but only as "text" (except for "sort" column)
+- [parquets_lake] GT format is now "0/0;0/1;1/1" and not "null;1;2"
 
 ### Changed
 
 - [single_parquet] Remove "info_" prefix in colnames (coherent with "parquets_lake" now)
 - [parquets_lake] Full join of GT now, not left join from 1st one
+- Some performance improvements
 
 <br>
 
