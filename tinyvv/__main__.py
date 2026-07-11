@@ -163,35 +163,34 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
 
     # Set colDefs properties
-    columnDefs=[{"field": i} for i in wanted_cols]
+    # MEMO: Ag-grid expects a list of {field:i}
+    #       But for now simpler to use a dict with colname as key
+    pre_columnDefs={i:{"field": i} for i in wanted_cols}
 
-    # ENH: Do not parcours colDef twice
-    for a_col in columnDefs:
-        if a_col["field"] in GT_cols:
-            # Color GT cols:
-            # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
-            a_col["cellStyle"] = colorize_GT()
+    # Color GT cols:
+    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
+    for gt_col in GT_cols:
+        pre_columnDefs[gt_col]["cellStyle"] = colorize_GT()
 
-        if a_col["field"] == "#CHROMPOSREFALT":
-            # JS func defined in 'dashAgGridComponentFunctions.js':
-            a_col["cellRenderer"] = "chrPosRefAltLink"
+    # Render link in 'chr-pos-ref-alt' col:
+    # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
+    pre_columnDefs["#CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
 
     # Add tooltips:
     if config_OK and 'agg_in_tooltip' in conf.keys():
-        ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
         to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
-        for a_col in columnDefs:
-            col_name = a_col["field"]
-            if col_name in conf['agg_in_tooltip'].keys():
-                a_col["tooltipField"] = col_name  # Mandatory
-                a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], col_name)
+
+        for a_col in conf['agg_in_tooltip'].keys():
+            pre_columnDefs[a_col]["tooltipField"] = a_col  # Mandatory
+            ## aggKey_to_func() writes a JS func for each col where tooltip is added:
+            pre_columnDefs[a_col]["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col)
             # Hide columns whose data are in tooltip:
-            if col_name in to_hide:
-                a_col["hide"] = True
+            if a_col in to_hide:
+                pre_columnDefs[a_col]["hide"] = True
 
         logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
 
-    logger.debug(nice_dict(columnDefs))
+    logger.debug(nice_dict(list(pre_columnDefs.values())))
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation
@@ -205,7 +204,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             dag.AgGrid(
                 id="infinite-grid",
                 style={"height": 600, "width": "100%"},
-                columnDefs=columnDefs,
+                columnDefs=list(pre_columnDefs.values()),
                 defaultColDef={
                     "sortable": False,
                     "filter": True,
