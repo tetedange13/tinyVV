@@ -2,16 +2,17 @@ import polars as pl
 
 
 def convert_list_str(colname):
-    # ENH: Use schema's dtypes ?
-    #      Or define 'filter':'agNumberColumnFilter' for cols u8 ?
     return pl.col(colname).list.join(separator="")
 
 
 def parse_column_filter(filter_obj, col_name):
    """Build a polars filter expression based on the filter object"""
 
-   # First convert if type == 'list(str):
-   converted_col = convert_list_str(col_name)
+   if filter_obj["filterType"] == "text":
+       # WARN: Bellow assume all 'text' cols are of pl.dtype == 'list(str):
+       converted_col = convert_list_str(col_name)
+   else:
+       converted_col = pl.col(col_name)
 
    if filter_obj["filterType"] == "set":
        expr = None

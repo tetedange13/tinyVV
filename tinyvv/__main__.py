@@ -176,11 +176,15 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
     pre_columnDefs["#CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
 
-    # Add tooltips:
-    if config_OK and 'agg_in_tooltip' in conf.keys():
-        to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
+    # Change filterType of 'sort' column:
+    if config_OK and "sort" in conf.keys():
+        pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
 
-        for a_col in conf['agg_in_tooltip'].keys():
+    # Add tooltips:
+    if config_OK and "agg_in_tooltip" in conf.keys():
+        to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
+
+        for a_col in conf["agg_in_tooltip"].keys():
             pre_columnDefs[a_col]["tooltipField"] = a_col  # Mandatory
             ## aggKey_to_func() writes a JS func for each col where tooltip is added:
             pre_columnDefs[a_col]["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col)
