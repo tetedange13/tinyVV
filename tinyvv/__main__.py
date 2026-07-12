@@ -68,10 +68,10 @@ def main():
         # Collect original colnames 1st, to discriminate INFO cols:
         original_colnames = DATA_SOURCE.collect_schema().names()
         # Can also get genotype columns by their name:
-        GT_cols = [ c for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]        # Rename cols with '.' inside, cuz not supported:
+        GT_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]        # Rename cols with '.' inside, cuz not supported:
         # Then rename cols with '.' inside, cuz not supported:
         # Also remove 'info_' prefix at the same time
-        rename_dict = {c:c.replace('.', '_').replace('info_', '') for c in original_colnames}
+        rename_dict = {c:c.replace('.', '_').replace('info_', '').replace('format_', '') for c in original_colnames}
         DATA_SOURCE = DATA_SOURCE.rename(rename_dict)
         # Collect new renamed schema:
         full_schema = DATA_SOURCE.collect_schema()
@@ -88,7 +88,7 @@ def main():
             cols_list = all_ann_cols
         DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
         # Define and fix gt_cols (1 -> 0/1 etc):
-        GT_cols = [ f"format_{s}_GT" for s in args.input ]
+        GT_cols = [ f"{s}_GT" for s in args.input ]
         dict_gt = {"1":"0/1", "2":"1/1"}
         for gt_col in GT_cols:
             DATA_SOURCE = DATA_SOURCE.with_columns(

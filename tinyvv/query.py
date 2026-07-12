@@ -15,7 +15,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     for s in samples_list:
         pq_path = f"{LAKE}/genotypes/samples/{s}.parquet"
         selected_cols = ['id','gt', 'ad']
-        rename_dict = { c:f'format_{s}_{c.upper()}' for c in selected_cols if c != 'id' }
+        rename_dict = { c:f"{s}_{c.upper()}" for c in selected_cols if c != 'id' }
         pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
         pqs_list.append(pq_to_join)
 
@@ -42,7 +42,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)
     
-    gt_cols = ','.join([f"format_{x}_GT" for x in samples_list])
+    gt_cols = ','.join([f"{x}_GT" for x in samples_list])
     if cols_list:
         ann_cols = ','.join([a for a in cols_list])
     else:
