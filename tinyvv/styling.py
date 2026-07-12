@@ -37,7 +37,7 @@ def aggKey_to_func (a_dict, a_key):
 
 def format_to_tooltip(GT_cols):
     """
-    Returns
+    Returns a list of col_names to be put as tooltip values
     """
     list_in_tooltip = []
     for gt_col in GT_cols[1:]:
