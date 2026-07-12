@@ -29,8 +29,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
 - Put all FORMAT data in 1st GT col ? (same as Achab)
-- Add "case depth" and "case AB" cols ?
 
+<br>
+
+## [0.5.2] - Unreleased
+
+### Fixed
+
+- Wrong "rowCount" passed to ag-grid (should ALWAYS be "total rows")
+- Simplify "GT" colname: "format_sample_GT" -> "sample_GT"
+- Total rows counting now faster on "real deal" datasets
+
+### Added
+
+- Other FORMAT columns (GQ, DP, AD) and compute AB (VAF)
 
 <br>
 
