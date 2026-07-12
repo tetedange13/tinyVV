@@ -108,11 +108,10 @@ python -m tinyvv \
 
 ## Limitations / Known issues
 - Parquet inputs (single or as lake) should be provided as command-line argument
-- `chr-pos-ref-alt` col filter broken (always return "no match")
-- Multiple columns are of type `list[str]` which fails most "text" filters (Polars error: `expected String type, got: list[str]`)
+- Most columns are filtered as they were "text" (including gnomAD freq for eg.)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
-- INFO/ANN colnames differ between single_pq and lake inputs ('info_' prefix vs None)
-- GT are shown as (0, 1, 2) with lake input (vs 0/0, 0/1, 1/1)
+- VCF filenames cannot contain '.' symbol (except for the extension)
+- [parquets_lake] Empty values in ANN are shown as '.' (vs null in "single_pq" input)
 
 <br>
 

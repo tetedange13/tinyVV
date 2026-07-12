@@ -11,11 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Feature
 
-- Let user select parquet file through page
+(f1) Let user select parquet file through page
+
+(f2) Use ".shrink_dtype()" to solve problem of "List(str)" cols
 
 ### Reason
 
-- Browser convert loaded file to base64, which can be slow on big file. Also feature not very relevant if someday app sits on a parquets lake
+(r1) Browser convert loaded file to base64, which can be slow on big file. Also feature not very relevant if app sits on a parquets lake
+
+(r2) ".shrink_dtype()" do not run on lazyFrame
 
 <br>
 
@@ -26,7 +30,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
 - Put all FORMAT data in 1st GT col ? (same as Achab)
 - Add "case depth" and "case AB" cols ?
-- Use "shrink_dtype" to solve problem of "List(str)" cols ? NO cuz do not run on lazyFrame
+
+
+<br>
+
+## [0.5.1] - 2026-07-12
+
+### Fixed
+
+- Renamed columns with containing a dot '.', it is causing issues with Dash and/or Polars
+- Can filter on columns, but only as "text" (except for "sort" column)
+- [parquets_lake] GT format is now "0/0;0/1;1/1" and not "null;1;2"
+
+### Changed
+
+- [single_parquet] Remove "info_" prefix in colnames (coherent with "parquets_lake" now)
+- [parquets_lake] Full join of GT now, not left join from 1st one
+- Some performance improvements
 
 <br>
 

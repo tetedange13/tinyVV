@@ -8,7 +8,7 @@ import yaml
 from .filtering import make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
 from .utils import parse_args, nice_dict
-from .query import lake_data, lake_schema
+from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
 
 
@@ -65,25 +65,43 @@ def main():
     if args.parquet:  # Single pq input
         assert osp.isfile(args.parquet), f"Provided parquet '{args.parquet}' not found"
         DATA_SOURCE = pl.scan_parquet(args.parquet)
+        # Collect original colnames 1st, to discriminate INFO cols:
+        original_colnames = DATA_SOURCE.collect_schema().names()
+        # Can also get genotype columns by their name:
+        GT_cols = [ c for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]        # Rename cols with '.' inside, cuz not supported:
+        # Then rename cols with '.' inside, cuz not supported:
+        # Also remove 'info_' prefix at the same time
+        rename_dict = {c:c.replace('.', '_').replace('info_', '') for c in original_colnames}
+        DATA_SOURCE = DATA_SOURCE.rename(rename_dict)
+        # Collect new renamed schema:
         full_schema = DATA_SOURCE.collect_schema()
-        all_ann_cols = [ c for c in full_schema.names() if c.startswith('info_') ]
-        # Find genotype columns by their name:
-        GT_cols = [ c for c in full_schema.names() if c.startswith('format_') and c.endswith('_GT') ]
-        # Fix cols:
-        DATA_SOURCE = DATA_SOURCE.with_columns(
-            pl.col("alternate").list.join(separator="")
-            )
+        # List of INFO cols (with their new names):
+        all_ann_cols = [c.replace('.', '_').replace('info_', '') for c in original_colnames if c.startswith('info_')]
 
     elif args.input:  # Lake input
         # WARN: Bellow 'full_schema' only contains ANN cols...
         full_schema = lake_schema(args.lake)
         all_ann_cols = [c for c in full_schema.names() if not c.endswith('id')]
-        GT_cols = [ f"format_{s}_GT" for s in args.input ]
         if config_OK and 'col_selection' in conf.keys():
             cols_list = selected_cols
         else:
             cols_list = all_ann_cols
         DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
+        # Define and fix gt_cols (1 -> 0/1 etc):
+        GT_cols = [ f"format_{s}_GT" for s in args.input ]
+        dict_gt = {"1":"0/1", "2":"1/1"}
+        for gt_col in GT_cols:
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                pl.col(gt_col).cast(str).replace(dict_gt)
+            )
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                pl.col(gt_col).fill_null("0/0")
+            )
+            # Convert to 'List(str)':
+            # ENH: Not very efficient to concat_list for later str.join('')
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                pl.concat_list([pl.col(gt_col)])
+            )
 
 
     # FROM HERE: should be independent of input type (lake or single pq)
@@ -93,18 +111,14 @@ def main():
         exit()
 
     # Create 'chr-pos-ref-alt' col:
-    to_concat = [
-        'chromosome',
-        'position',
-        'reference',
-        'alternate',
-    ]
     DATA_SOURCE = DATA_SOURCE.with_columns(
-        pl.concat_str(
-            to_concat,
-            separator="-"
-        ).alias("#CHROMPOSREFALT")
-    ).drop(to_concat)
+        pl.concat_list([
+            pl.col('chromosome') + '-',
+            pl.col('position').cast(str) + '-',
+            pl.col('reference') + '-',
+            pl.col('alternate'),
+        ]).alias("#CHROMPOSREFALT")
+    )
 
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
@@ -134,17 +148,15 @@ def main():
     else:
         DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
 
+    # Collect schema of final lf:
+    final_schema = DATA_SOURCE.collect_schema()
+    dict_schema = {k:str(final_schema[k]) for k in final_schema}
+    logger.debug(nice_dict(dict_schema))
+
     # Bellow is a kind of assert (FAIL if selected wrong cols):
     logger.info("Show first 10 rows of data:")
-    print(DATA_SOURCE.head().collect())
-
-    columnDefs=[{"field": i} for i in wanted_cols]
-
-    # Color GT cols:
-    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
-    for a_col in columnDefs:
-        if a_col["field"] in GT_cols:
-            a_col["cellStyle"] = colorize_GT()
+    head_of_data = DATA_SOURCE.head().collect()
+    logger.info(head_of_data)
 
     # Add hyperlink to 'chr-pos-ref-alt' col:
     # ENH: Use MobiDetails instead (API key required to query variant)
@@ -163,32 +175,44 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     with open('tinyvv/assets/dashAgGridComponentFunctions.js', 'w') as compon_file:
         compon_file.write(custom_compon.replace('BUILD', args.build))
 
-    # ENH: Do not parcours colDef twice
-    for a_col in columnDefs:
-        if a_col["field"] == "#CHROMPOSREFALT":
-            # JS func defined in 'dashAgGridComponentFunctions.js':
-            a_col["cellRenderer"] = "chrPosRefAltLink"
+
+    # Set colDefs properties
+    # MEMO: Ag-grid expects a list of {field:i}
+    #       But for now simpler to use a dict with colname as key
+    pre_columnDefs={i:{"field": i} for i in wanted_cols}
+
+    # Color GT cols:
+    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
+    for gt_col in GT_cols:
+        pre_columnDefs[gt_col]["cellStyle"] = colorize_GT()
+
+    # Render link in 'chr-pos-ref-alt' col:
+    # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
+    pre_columnDefs["#CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
+
+    # Change filterType of 'sort' column:
+    if config_OK and "sort" in conf.keys():
+        pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
 
     # Add tooltips:
-    if config_OK and 'agg_in_tooltip' in conf.keys():
-        ## Then aggKey_to_func() writes a JS func for each col where tooltip is added:
-        to_hide = [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
-        for a_col in columnDefs:
-            col_name = a_col["field"]
-            if col_name in conf['agg_in_tooltip'].keys():
-                a_col["tooltipField"] = col_name  # Mandatory
-                a_col["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], col_name)
+    if config_OK and "agg_in_tooltip" in conf.keys():
+        to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
+
+        for a_col in conf["agg_in_tooltip"].keys():
+            pre_columnDefs[a_col]["tooltipField"] = a_col  # Mandatory
+            ## aggKey_to_func() writes a JS func for each col where tooltip is added:
+            pre_columnDefs[a_col]["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col)
             # Hide columns whose data are in tooltip:
-            if col_name in to_hide:
-                a_col["hide"] = True
+            if a_col in to_hide:
+                pre_columnDefs[a_col]["hide"] = True
 
         logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
 
-    logger.debug(nice_dict(columnDefs))
+    logger.debug(nice_dict(list(pre_columnDefs.values())))
 
     # Count total rows:
     # MEMO: Select 1st col speed up operation
-    #total_rows = DATA_SOURCE.select('chromosome').with_row_index().last().select('index').collect().item()
+    total_rows = DATA_SOURCE.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect().item()
 
     app = Dash()
 
@@ -198,15 +222,18 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             dag.AgGrid(
                 id="infinite-grid",
                 style={"height": 600, "width": "100%"},
-                columnDefs=columnDefs,
+                columnDefs=list(pre_columnDefs.values()),
                 defaultColDef={
                     "sortable": False,
                     "filter": True,
                 },
                 rowModelType="infinite",
                 dashGridOptions={
+                    # Auto-height slow grid: https://www.ag-grid.com/javascript-data-grid/scrolling-performance/#avoid-auto-height
+                    "rowHeight": 42,
                     # The number of rows rendered outside the viewable area the grid renders.
-                    "rowBuffer": 0,
+                    # Default=10
+                    "rowBuffer": 50,
                     # How many blocks to keep in the store. Default is no limit, so every requested block is kept.
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
@@ -231,17 +258,13 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         columns = [col["field"] for col in columnDefs]
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
         partial = ldf[request["startRow"] : request["endRow"]].collect()
-        # Count rows after filter, but handle case where filter return nothing:
-        rows_count_df = ldf.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect()
-        if rows_count_df.shape[0] == 0:
-            rows_count = 0
-        else:
-            rows_count = rows_count_df.item()
-
-        return {
+        rows_count = partial.shape[0]
+        dict_data = {
             "rowData": partial.to_dicts(),
-            "rowCount": rows_count,
-        }, request["filterModel"]
+            "rowCount": rows_count
+        }
+        logger.debug(f"Nb rows after filtering: {rows_count}")
+        return dict_data, request["filterModel"]
 
     app.run(debug=False)
 
