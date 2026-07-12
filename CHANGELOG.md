@@ -39,10 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong "rowCount" passed to ag-grid (should ALWAYS be "total rows")
 - Simplify "GT" colname: "format_sample_GT" -> "sample_GT"
 - Total rows counting now faster on "real deal" datasets
+- Previous commit broke "cols in tooltip are hidden" behaviour
 
 ### Added
 
 - Other FORMAT columns (GQ, DP, AD) and compute AB (VAF)
+- "1st_sample_GT" has tooltip with FORMAT values of other samples
 
 <br>
 
