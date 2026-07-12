@@ -213,6 +213,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # Count total rows:
     # MEMO: Select 1st col speed up operation
     total_rows = DATA_SOURCE.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect().item()
+    logger.debug(f"Total number of variants: {total_rows}")
+
 
     app = Dash()
 
@@ -261,8 +263,10 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         rows_count = partial.shape[0]
         dict_data = {
             "rowData": partial.to_dicts(),
-            "rowCount": rows_count
         }
+        dict_data["rowCount"] = total_rows
+        if rows_count == 0:
+            dict_data["rowCount"] = 0
         logger.debug(f"Nb rows after filtering: {rows_count}")
         return dict_data, request["filterModel"]
 
