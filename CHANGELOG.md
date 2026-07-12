@@ -11,11 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Feature
 
-- Let user select parquet file through page
+(f1) Let user select parquet file through page
+
+(f2) Use ".shrink_dtype()" to solve problem of "List(str)" cols
 
 ### Reason
 
-- Browser convert loaded file to base64, which can be slow on big file. Also feature not very relevant if someday app sits on a parquets lake
+(r1) Browser convert loaded file to base64, which can be slow on big file. Also feature not very relevant if app sits on a parquets lake
+
+(r2) ".shrink_dtype()" do not run on lazyFrame
 
 <br>
 
@@ -26,11 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
 - Put all FORMAT data in 1st GT col ? (same as Achab)
 - Add "case depth" and "case AB" cols ?
-- Use "shrink_dtype" to solve problem of "List(str)" cols ? NO cuz do not run on lazyFrame
+
 
 <br>
 
-## [0.5.1] - Unreleased
+## [0.5.1] - 2026-07-12
 
 ### Fixed
 
