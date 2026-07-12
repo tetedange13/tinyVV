@@ -4,6 +4,7 @@ from dash import Dash, Input, Output, dcc, html, no_update, callback
 import polars as pl
 import os.path as osp
 import yaml
+from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
 from .styling import colorize_GT, aggKey_to_func
@@ -211,9 +212,9 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     logger.debug(nice_dict(list(pre_columnDefs.values())))
 
     # Count total rows:
-    # MEMO: Select 1st col speed up operation
-    total_rows = DATA_SOURCE.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect().item()
-    logger.debug(f"Total number of variants: {total_rows}")
+    start = perf_counter()
+    total_rows = DATA_SOURCE.select(pl.len()).collect().item()
+    logger.debug(f"Counted {total_rows} variants (in {perf_counter()-start} s)")
 
 
     app = Dash()
