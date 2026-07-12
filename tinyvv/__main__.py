@@ -7,7 +7,7 @@ import yaml
 from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
-from .styling import colorize_GT, aggKey_to_func
+from .styling import colorize_GT, aggKey_to_func, format_to_tooltip
 from .utils import parse_args, nice_dict
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
@@ -216,16 +216,20 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
 
     # Add tooltips:
-    if config_OK and "agg_in_tooltip" in conf.keys():
+    # First add 'FORMAT' cols
+    if len(GT_cols) > 1:
+        conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
+    if len(GT_cols) > 1 or (config_OK and "agg_in_tooltip" in conf.keys()):
         to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
 
         for a_col in conf["agg_in_tooltip"].keys():
             pre_columnDefs[a_col]["tooltipField"] = a_col  # Mandatory
             ## aggKey_to_func() writes a JS func for each col where tooltip is added:
             pre_columnDefs[a_col]["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col)
-            # Hide columns whose data are in tooltip:
-            if a_col in to_hide:
-                pre_columnDefs[a_col]["hide"] = True
+
+        # Hide columns whose data are in tooltip:
+        for hide_col in to_hide:
+            pre_columnDefs[hide_col]["hide"] = True
 
         logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
 

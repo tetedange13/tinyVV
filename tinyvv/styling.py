@@ -33,3 +33,22 @@ def aggKey_to_func (a_dict, a_key):
             tooltip_file.write(lines.replace("INSERT_HERE", to_write) + '\n')
 
     return f"CustomTooltip_{a_key}"
+
+
+def format_to_tooltip(GT_cols):
+    """
+    Returns
+    """
+    list_in_tooltip = []
+    for gt_col in GT_cols[1:]:
+        gq_colname = gt_col.replace('_GT', '_GQ')
+        dp_colname = gt_col.replace('_GT', '_DP')
+        ad_colname = gt_col.replace('_GT', '_AD')
+        ab_colname = gt_col.replace('_GT', '_AB')
+        list_in_tooltip += [
+            gq_colname,
+            dp_colname,
+            ad_colname,
+            ab_colname
+        ]
+    return list_in_tooltip
