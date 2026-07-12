@@ -68,8 +68,11 @@ def main():
         DATA_SOURCE = pl.scan_parquet(args.parquet)
         # Collect original colnames 1st, to discriminate INFO cols:
         original_colnames = DATA_SOURCE.collect_schema().names()
-        # Can also get genotype columns by their name:
-        GT_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]        # Rename cols with '.' inside, cuz not supported:
+        # Can also get GT, AD columns by their name:
+        GT_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]
+        AD_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_AD') ]
+        DP_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_DP') ]
+        GQ_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_GQ') ]
         # Then rename cols with '.' inside, cuz not supported:
         # Also remove 'info_' prefix at the same time
         rename_dict = {c:c.replace('.', '_').replace('info_', '').replace('format_', '') for c in original_colnames}
@@ -90,6 +93,9 @@ def main():
         DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
         # Define and fix gt_cols (1 -> 0/1 etc):
         GT_cols = [ f"{s}_GT" for s in args.input ]
+        AD_cols = [ f"{s}_AD" for s in args.input ]
+        DP_cols = [ f"{s}_DP" for s in args.input ]
+        GQ_cols = [ f"{s}_GQ" for s in args.input ]
         dict_gt = {"1":"0/1", "2":"1/1"}
         for gt_col in GT_cols:
             DATA_SOURCE = DATA_SOURCE.with_columns(
@@ -121,10 +127,24 @@ def main():
         ]).alias("#CHROMPOSREFALT")
     )
 
+    # Create 'sample_AB' (VAF) cols:
+    AB_cols = []
+    for a_ad in AD_cols:
+        ab_colname = a_ad.replace('_AD', '_AB')
+        dp_colname = a_ad.replace('_AD', '_DP')
+        DATA_SOURCE = DATA_SOURCE.with_columns(
+            (pl.col(a_ad).list[1]/pl.col(dp_colname)).alias(ab_colname)
+        )
+        AB_cols.append(ab_colname)
+
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
     wanted_cols = ["#CHROMPOSREFALT"]
     wanted_cols += GT_cols
+    wanted_cols += GQ_cols
+    wanted_cols += DP_cols
+    wanted_cols += AD_cols
+    wanted_cols += AB_cols
 
     if config_OK and 'col_selection' in conf.keys():
         wanted_cols += selected_cols
