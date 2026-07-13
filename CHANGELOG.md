@@ -40,11 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplify "GT" colname: "format_sample_GT" -> "sample_GT"
 - Total rows counting now faster on "real deal" datasets
 - Previous commit broke "cols in tooltip are hidden" behaviour
+- Sort column is automatically added (even if not in "col_selection")
+- Auto-size columns width
 
 ### Added
 
 - Other FORMAT columns (GQ, DP, AD) and compute AB (VAF)
 - "1st_sample_GT" has tooltip with FORMAT values of other samples
+- "bin/build_lake.sh" now use VEP/SnpEff ann/csq annotatios=ns by default (based on script "bin/tsv_to_parquet.py")
 
 <br>
 
