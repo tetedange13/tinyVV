@@ -59,8 +59,10 @@ def main():
         if 'agg_in_tooltip' in conf.keys():
             selected_cols += conf['agg_in_tooltip'].keys()
             selected_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
-            selected_cols = list(dict.fromkeys(selected_cols))  # De-duplicate
-        # Do we need to add col from 'sort' section ???
+        # Add col from 'sort' section:
+        if 'sort' in conf.keys():
+            selected_cols += [conf['sort'][0]]
+        selected_cols = list(dict.fromkeys(selected_cols))  # De-duplicate
 
     # Add/process cols depending on input type:
     if args.parquet:  # Single pq input
