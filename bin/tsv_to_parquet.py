@@ -33,6 +33,13 @@ if __name__ == "__main__":
         null_values=["."],
     )
 
+    # Turn String cols to List(str):
+    # For homogeneity with rest of project
+    for a_col in [c for c in schema_override.keys() if c != 'POS']:
+        annotations = annotations.with_columns(
+            pl.concat_list([pl.col(a_col)])
+        )
+
     # Rename columns variantplaner:
     vp_rename= {
         "CHROM":"chr",
@@ -55,8 +62,8 @@ if __name__ == "__main__":
     final_schema = annotations.collect_schema()
     dict_schema = {k:str(final_schema[k]) for k in final_schema}
     print(json.dumps(dict_schema, indent=2))
-    annotations.collect()
 
+    # Add variant-planer's variant_id:
     tsv_with_id = variantplaner.normalization.add_variant_id(
         annotations,
         chrom2length.lf,
@@ -64,6 +71,8 @@ if __name__ == "__main__":
         ['chr', 'pos', 'ref', 'alt']
     )
     print(tsv_with_id.head().collect())
+
+    # Write outParquet:
     tsv_with_id.sink_parquet(
        outPqPath,
        compression='zstd'
