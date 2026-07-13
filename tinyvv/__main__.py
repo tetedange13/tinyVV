@@ -265,6 +265,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
                     "tooltipShowDelay": 0,
+                    "enableCellTextSelection": "true",
                 },
             ),
             dcc.Store(id="filter-model"),
