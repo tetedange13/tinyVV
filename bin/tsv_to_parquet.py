@@ -19,6 +19,7 @@ if __name__ == "__main__":
 
     # Read header and force str type for all 'ANN_' cols:
     # Otherwise issues with inferred dtypes for some cols
+    # ENH: Do that with polars to support compressed TSV ???
     with open(inTsv, 'r') as inTsv_file:
         for a_line in inTsv_file:
             header = a_line.rstrip('\n').split('\t')
@@ -52,11 +53,7 @@ if __name__ == "__main__":
 
     # Rename to remove 'prefix' (eg: ANN_ or CSQ_):
     source_colnames = annotations.collect_schema().names()
-    if "ANN_STRAND" in source_colnames:
-        prefix_to_remove = "ANN_"
-    else:
-        prefix_to_remove = "CSQ_"
-    prf_rename = {c:c.replace(prefix_to_remove,'') for c in source_colnames if c.startswith(prefix_to_remove)}
+    prf_rename = {c:c.replace('ANN_','').replace('CSQ_','') for c in source_colnames if c.startswith('ANN_') or c.startswith('CSQ_')}
     annotations = annotations.rename(prf_rename)
 
     final_schema = annotations.collect_schema()
