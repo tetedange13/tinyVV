@@ -238,7 +238,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # Count total rows:
     start = perf_counter()
     total_rows = DATA_SOURCE.select(pl.len()).collect().item()
-    logger.debug(f"Counted {total_rows} variants (in {perf_counter()-start} s)")
+    logger.debug(f"Counted a total of {total_rows} rows (in {perf_counter()-start} s)")
 
 
     app = Dash()
