@@ -253,8 +253,10 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                 defaultColDef={
                     "sortable": False,
                     "filter": True,
+                    "minWidth": 25,
                 },
                 rowModelType="infinite",
+                columnSize="sizeToFit",
                 dashGridOptions={
                     # Auto-height slow grid: https://www.ag-grid.com/javascript-data-grid/scrolling-performance/#avoid-auto-height
                     "rowHeight": 42,
@@ -265,7 +267,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
                     "tooltipShowDelay": 0,
-                    "enableCellTextSelection": "true",
+                    "enableCellTextSelection": True,
+                    "skipHeaderOnAutoSize": True,
                 },
             ),
             dcc.Store(id="filter-model"),
