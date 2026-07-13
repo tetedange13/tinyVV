@@ -7,6 +7,9 @@ col_selection:
   - Consequence
   - IMPACT
   - ClinVar_CLNSIG
+  - REVEL_score
+  - SIFT_score
+  - PolyPhen
 
 agg_in_tooltip:
   gnomAD4_1_joint_POPMAX_AF:
