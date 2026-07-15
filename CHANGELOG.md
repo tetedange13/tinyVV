@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Total rows counting now faster on "real deal" datasets
 - Previous commit broke "cols in tooltip are hidden" behaviour
 - Sort column is automatically added (even if not in "col_selection")
-- Auto-size columns width
+- Set a few columns width
 - "blank / non-blank" filtering was broken
 
 ### Added

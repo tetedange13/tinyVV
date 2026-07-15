@@ -210,10 +210,12 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
     for gt_col in GT_cols:
         pre_columnDefs[gt_col]["cellStyle"] = colorize_GT()
+        pre_columnDefs[gt_col]["width"] = 150
 
     # Render link in 'chr-pos-ref-alt' col:
     # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
     pre_columnDefs["#CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
+    pre_columnDefs["#CHROMPOSREFALT"]["width"] = 100
 
     # Change filterType of 'sort' column:
     if config_OK and "sort" in conf.keys():
@@ -222,6 +224,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # Change filterType of 'occurrence' column (if defined):
     if 'occurrence' in pre_columnDefs.keys():
         pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
+        pre_columnDefs["occurrence"]["width"] = 100
         conf["agg_in_tooltip"]["occurrence"] = ["found_in"]
 
     # Add tooltips:
@@ -262,10 +265,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                 defaultColDef={
                     "sortable": False,
                     "filter": True,
-                    "minWidth": 50,
                 },
                 rowModelType="infinite",
-                columnSize="sizeToFit",
                 dashGridOptions={
                     # Auto-height slow grid: https://www.ag-grid.com/javascript-data-grid/scrolling-performance/#avoid-auto-height
                     "rowHeight": 42,
