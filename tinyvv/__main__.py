@@ -222,6 +222,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # Change filterType of 'occurrence' column (if defined):
     if 'occurrence' in pre_columnDefs.keys():
         pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
+        conf["agg_in_tooltip"]["occurrence"] = ["found_in"]
 
     # Add tooltips:
     # First add 'FORMAT' cols
