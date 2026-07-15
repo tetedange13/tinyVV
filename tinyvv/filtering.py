@@ -3,7 +3,17 @@ import polars as pl
 
 def convert_list_str(colname):
     # ENH: Use dtype from schema ???
-    return pl.col(colname).list.join(separator="")
+    """
+    Most text-based columns are typed 'List(str)' by variant-planer/vcf2parquet
+    Convert them back to string avoid dtype incompatibily error when filtering
+    'ignore_nulls' is disabled to allow 'blank / non-blank' filtering
+    """
+    return pl.col(
+        colname
+            ).list.join(
+                separator="",
+                ignore_nulls=False,
+            )
 
 
 def parse_column_filter(filter_obj, col_name):

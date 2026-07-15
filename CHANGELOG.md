@@ -28,9 +28,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
-- Put all FORMAT data in 1st GT col ? (same as Achab)
-- Add "case depth" and "case AB" cols ?
 
+<br>
+
+## [0.6.0] - 2026-07-15
+
+### Fixed
+
+- Wrong "rowCount" passed to ag-grid (should ALWAYS be "total rows")
+- Simplify "GT" colname: "format_sample_GT" -> "sample_GT"
+- Total rows counting now faster on "real deal" datasets
+- Previous commit broke "cols in tooltip are hidden" behaviour
+- Sort column is automatically added (even if not in "col_selection")
+- Set a few columns width
+- "blank / non-blank" filtering was broken
+
+### Added
+
+- Other FORMAT columns (GQ, DP, AD) and compute AB (VAF)
+- "1st_sample_GT" has tooltip with FORMAT values of other samples
+- "bin/build_lake.sh" now use VEP/SnpEff ann/csq annotations by default (based on script "bin/nestedAnn_to_parquet.py")
+- [pq_lake] Building lake compute variants occurrence, added as column (with list of samples supporting occurrence as tooltip)
 
 <br>
 

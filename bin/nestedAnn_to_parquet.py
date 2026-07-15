@@ -1,51 +1,78 @@
+#!/usr/bin/env python3
+
+
 import sys
-import polars
-from variantplaner import Vcf
+import json
+import polars as pl
+import variantplaner
+from variantplaner import ContigsLength
 
-vcf = Vcf()
 
-try:
-    vcf.from_path(sys.argv[1], "examples/parquets_lake/grch38.92.csv")
-except variantplaner.exception.NotAVCFError:
-    print("snpeff_annotations.vcf seems to have error")
-    exit(1)
-except variantplaner.exception.NoContigsLengthInformationError:
-    print("snpeff_annotations.vcf header seems not contain contig information")
-    exit(2)
+if __name__ == "__main__":
+    inTsv = sys.argv[1]
+    chrom2length_file = sys.argv[2]
+    outPqPath = sys.argv[3]
 
-lf = vcf.lf.with_columns(vcf.header.info_parser())
-lf = lf.drop(["chr", "pos", "ref", "alt", "filter", "qual", "info"])
-#lf = lf.rename({"vid": "id"})
-lf = lf.explode("ANN")
-#lf = lf.cast({"id": polars.UInt64})
+    # Read chrom_to_len file using dedicated class:
+    chrom2length = ContigsLength()
+    chrom2length.from_path(chrom2length_file)
 
-lf = lf.with_columns(
-    [
-        polars.col("ANN")
-        .str.split("|")
-        .cast(polars.List(polars.Utf8()))
-        .alias("ann"),
-    ]
-).drop("ANN")
+    # Read header and force str type for all 'ANN_' cols:
+    # Otherwise issues with inferred dtypes for some cols
+    header = pl.read_csv(
+        inTsv,
+        separator="\t",
+        has_header=False,
+        n_rows=1,
+    ).transpose()['column_0'].to_list()
+    schema_override = {c:pl.String for c in header if c.startswith('ANN_') or c.startswith('CSQ_')}
+    schema_override['POS'] = pl.UInt64
 
-lf = lf.with_columns(
-    [
-        polars.col("ann").list.get(1).alias("effect"),
-        polars.col("ann").list.get(2).alias("impact"),
-        polars.col("ann").list.get(3).alias("gene"),
-        polars.col("ann").list.get(4).alias("geneid"),
-        polars.col("ann").list.get(5).alias("feature"),
-        polars.col("ann").list.get(6).alias("feature_id"),
-        polars.col("ann").list.get(7).alias("bio_type"),
-        polars.col("ann").list.get(8).alias("rank"),
-        polars.col("ann").list.get(9).alias("hgvs_c"),
-        polars.col("ann").list.get(10).alias("hgvs_p"),
-        polars.col("ann").list.get(11).alias("cdna_pos"),
-        polars.col("ann").list.get(12).alias("cdna_len"),
-        polars.col("ann").list.get(13).alias("cds_pos"),
-        polars.col("ann").list.get(14).alias("cds_len"),
-        polars.col("ann").list.get(15).alias("aa_pos"),
-    ]
-).drop("ann")
+    annotations = pl.scan_csv(
+        inTsv,
+        schema_overrides=schema_override,
+        separator="\t",
+        null_values=["."],
+    )
 
-lf.sink_parquet("snpeff_annotations.parquet")
+    # Turn String cols to List(str):
+    # For homogeneity with rest of project
+    for a_col in [c for c in schema_override.keys() if c != 'POS']:
+        annotations = annotations.with_columns(
+            pl.concat_list([pl.col(a_col)])
+        )
+
+    # Rename columns variantplaner:
+    vp_rename= {
+        "CHROM":"chr",
+        "POS":"pos",
+        "REF":"ref",
+        "ALT":"alt",
+        "ID":"old_id",
+    }
+    annotations = annotations.rename(vp_rename)
+
+    # Rename to remove 'prefix' (eg: ANN_ or CSQ_):
+    source_colnames = annotations.collect_schema().names()
+    prf_rename = {c:c.replace('ANN_','').replace('CSQ_','') for c in source_colnames if c.startswith('ANN_') or c.startswith('CSQ_')}
+    annotations = annotations.rename(prf_rename)
+
+    final_schema = annotations.collect_schema()
+    dict_schema = {k:str(final_schema[k]) for k in final_schema}
+    print(json.dumps(dict_schema, indent=2))
+
+    # Add variant-planer's variant_id:
+    tsv_with_id = variantplaner.normalization.add_variant_id(
+        annotations,
+        chrom2length.lf,
+    ).drop(
+        ['chr', 'pos', 'ref', 'alt']
+    )
+    print(tsv_with_id.head().collect())
+
+    # Write outParquet:
+    tsv_with_id.sink_parquet(
+       outPqPath,
+       compression='zstd'
+    )
+    print(f"Wrote: {outPqPath}")

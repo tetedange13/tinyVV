@@ -1,5 +1,4 @@
 import polars as pl
-import os.path as osp
 
 
 def lake_schema(LAKE):
@@ -14,8 +13,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
     pqs_list = []
     for s in samples_list:
         pq_path = f"{LAKE}/genotypes/samples/{s}.parquet"
-        selected_cols = ['id','gt', 'ad']
-        rename_dict = { c:f'format_{s}_{c.upper()}' for c in selected_cols if c != 'id' }
+        selected_cols = ['id', 'gt', 'ad', 'dp', 'gq']
+        rename_dict = { c:f"{s}_{c.upper()}" for c in selected_cols if c != 'id' }
         pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
         pqs_list.append(pq_to_join)
 
@@ -33,6 +32,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     all_parquets = { 'joint_gt': joint_gt }
 
     # Add 'variants' for context passing:
+    all_parquets["c"] = pl.scan_parquet(f'{LAKE}/occurrences/*.parquet')
     all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
     # Same for annot but 1st rename cols with '.' inside, cuz not supported:
     ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
@@ -42,7 +42,10 @@ def lake_data(LAKE, samples_list, cols_list=None):
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)
     
-    gt_cols = ','.join([f"format_{x}_GT" for x in samples_list])
+    gt_cols = ','.join([f"{x}_GT" for x in samples_list])
+    ad_cols = ','.join([f"{x}_AD" for x in samples_list])
+    dp_cols = ','.join([f"{x}_DP" for x in samples_list])
+    gq_cols = ','.join([f"{x}_GQ" for x in samples_list])
     if cols_list:
         ann_cols = ','.join([a for a in cols_list])
     else:
@@ -54,10 +57,17 @@ def lake_data(LAKE, samples_list, cols_list=None):
         pos AS position,
         ref AS reference,
         alt AS alternate,
+        occurrence,
+        found_in,
         {gt_cols},
+        {ad_cols},
+        {dp_cols},
+        {gq_cols},
         {ann_cols},
 
         FROM joint_gt
+            LEFT JOIN c
+            ON id=c.id
             LEFT JOIN v
             ON id=v.id
             LEFT JOIN ann
@@ -65,19 +75,3 @@ def lake_data(LAKE, samples_list, cols_list=None):
     """
     print(query_lf)
     return ctx.execute(query_lf)
-
-
-def count_occurr(LAKE):
-    # Compute occurrences of all variants from all samples in lake
-    # MEMO: Keep using 'genotypes/*' instead of 'variants/*'
-    #       So that can have list of samples supporting occurrence
-    ctx = pl.SQLContext(frames={'all_samples': pl.scan_parquet(f"{LAKE}/genotypes/samples/*.parquet")})
-    query_occurr = """
-    SELECT
-        id,
-        count(*),
-        STRING_AGG(sample),
-    FROM all_samples
-    GROUP BY id;
-    """
-    return ctx.execute(query_occurr)

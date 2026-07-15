@@ -19,6 +19,8 @@ Filter by columns and if multiple -> AND logic applied
 
 Colored genotypes
 
+FORMAT values of other samples shown as tooltip of "1st_sample_GT" col
+
 Customization through companion yaml (see [documentation](https://github.com/tetedange13/tinyVV/blob/dev-felix/docs/customization.md)):
 * Column selection
 * Sort on a column

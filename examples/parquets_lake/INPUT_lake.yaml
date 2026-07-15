@@ -1,20 +1,18 @@
-sort:
-  - MPA_ranking
-  - False
-
 col_selection:
-  - MPA_ranking
-  - MPA_impact
-  - Gene_refGene
-  - gnomAD_exome_ALL
-  - gnomAD_genome_ALL
-  - CLNSIG
-  - InterVar_automated
+  - SYMBOL
+  - Feature
+  - HGVSc
+  - HGVSp
+  - gnomAD4_1_joint_POPMAX_AF
+  - Consequence
+  - IMPACT
+  - ClinVar_CLNSIG
+  - REVEL_score
+  - SIFT_score
+  - PolyPhen
 
 agg_in_tooltip:
-  gnomAD_exome_ALL:
-    - gnomAD_exome_AFR
-    - gnomAD_exome_AMR
-  gnomAD_genome_ALL:
-    - gnomAD_genome_AFR
-    - gnomAD_genome_AMR
+  gnomAD4_1_joint_POPMAX_AF:
+    - gnomAD4_1_joint_POPMAX_AC
+    - gnomAD4_1_joint_POPMAX_AN
+    - gnomAD4_1_joint_POPMAX_nhomalt

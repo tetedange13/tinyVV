@@ -4,9 +4,10 @@ from dash import Dash, Input, Output, dcc, html, no_update, callback
 import polars as pl
 import os.path as osp
 import yaml
+from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
-from .styling import colorize_GT, aggKey_to_func
+from .styling import colorize_GT, aggKey_to_func, format_to_tooltip
 from .utils import parse_args, nice_dict
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
@@ -58,8 +59,10 @@ def main():
         if 'agg_in_tooltip' in conf.keys():
             selected_cols += conf['agg_in_tooltip'].keys()
             selected_cols += [x for sublist in conf['agg_in_tooltip'].values() for x in sublist]
-            selected_cols = list(dict.fromkeys(selected_cols))  # De-duplicate
-        # Do we need to add col from 'sort' section ???
+        # Add col from 'sort' section:
+        if 'sort' in conf.keys():
+            selected_cols += [conf['sort'][0]]
+        selected_cols = list(dict.fromkeys(selected_cols))  # De-duplicate
 
     # Add/process cols depending on input type:
     if args.parquet:  # Single pq input
@@ -67,11 +70,14 @@ def main():
         DATA_SOURCE = pl.scan_parquet(args.parquet)
         # Collect original colnames 1st, to discriminate INFO cols:
         original_colnames = DATA_SOURCE.collect_schema().names()
-        # Can also get genotype columns by their name:
-        GT_cols = [ c for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]        # Rename cols with '.' inside, cuz not supported:
+        # Can also get GT, AD columns by their name:
+        GT_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_GT') ]
+        AD_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_AD') ]
+        DP_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_DP') ]
+        GQ_cols = [ c.replace('format_', '') for c in original_colnames if c.startswith('format_') and c.endswith('_GQ') ]
         # Then rename cols with '.' inside, cuz not supported:
         # Also remove 'info_' prefix at the same time
-        rename_dict = {c:c.replace('.', '_').replace('info_', '') for c in original_colnames}
+        rename_dict = {c:c.replace('.', '_').replace('info_', '').replace('format_', '') for c in original_colnames}
         DATA_SOURCE = DATA_SOURCE.rename(rename_dict)
         # Collect new renamed schema:
         full_schema = DATA_SOURCE.collect_schema()
@@ -88,7 +94,10 @@ def main():
             cols_list = all_ann_cols
         DATA_SOURCE = lake_data(args.lake, args.input, cols_list)
         # Define and fix gt_cols (1 -> 0/1 etc):
-        GT_cols = [ f"format_{s}_GT" for s in args.input ]
+        GT_cols = [ f"{s}_GT" for s in args.input ]
+        AD_cols = [ f"{s}_AD" for s in args.input ]
+        DP_cols = [ f"{s}_DP" for s in args.input ]
+        GQ_cols = [ f"{s}_GQ" for s in args.input ]
         dict_gt = {"1":"0/1", "2":"1/1"}
         for gt_col in GT_cols:
             DATA_SOURCE = DATA_SOURCE.with_columns(
@@ -120,10 +129,26 @@ def main():
         ]).alias("#CHROMPOSREFALT")
     )
 
+    # Create 'sample_AB' (VAF) cols:
+    AB_cols = []
+    for a_ad in AD_cols:
+        ab_colname = a_ad.replace('_AD', '_AB')
+        dp_colname = a_ad.replace('_AD', '_DP')
+        DATA_SOURCE = DATA_SOURCE.with_columns(
+            (pl.col(a_ad).list[1]/pl.col(dp_colname)).alias(ab_colname)
+        )
+        AB_cols.append(ab_colname)
+
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
     wanted_cols = ["#CHROMPOSREFALT"]
+    if args.input:
+        wanted_cols += ["occurrence", "found_in"]
     wanted_cols += GT_cols
+    wanted_cols += GQ_cols
+    wanted_cols += DP_cols
+    wanted_cols += AD_cols
+    wanted_cols += AB_cols
 
     if config_OK and 'col_selection' in conf.keys():
         wanted_cols += selected_cols
@@ -185,34 +210,48 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
     for gt_col in GT_cols:
         pre_columnDefs[gt_col]["cellStyle"] = colorize_GT()
+        pre_columnDefs[gt_col]["width"] = 150
 
     # Render link in 'chr-pos-ref-alt' col:
     # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
     pre_columnDefs["#CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
+    pre_columnDefs["#CHROMPOSREFALT"]["width"] = 100
 
     # Change filterType of 'sort' column:
     if config_OK and "sort" in conf.keys():
         pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
 
+    # Change filterType of 'occurrence' column (if defined):
+    if 'occurrence' in pre_columnDefs.keys():
+        pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
+        pre_columnDefs["occurrence"]["width"] = 100
+        conf["agg_in_tooltip"]["occurrence"] = ["found_in"]
+
     # Add tooltips:
-    if config_OK and "agg_in_tooltip" in conf.keys():
+    # First add 'FORMAT' cols
+    if len(GT_cols) > 1:
+        conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
+    if len(GT_cols) > 1 or (config_OK and "agg_in_tooltip" in conf.keys()):
         to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
 
         for a_col in conf["agg_in_tooltip"].keys():
             pre_columnDefs[a_col]["tooltipField"] = a_col  # Mandatory
             ## aggKey_to_func() writes a JS func for each col where tooltip is added:
             pre_columnDefs[a_col]["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col)
-            # Hide columns whose data are in tooltip:
-            if a_col in to_hide:
-                pre_columnDefs[a_col]["hide"] = True
+
+        # Hide columns whose data are in tooltip:
+        for hide_col in to_hide:
+            pre_columnDefs[hide_col]["hide"] = True
 
         logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
 
     logger.debug(nice_dict(list(pre_columnDefs.values())))
 
     # Count total rows:
-    # MEMO: Select 1st col speed up operation
-    total_rows = DATA_SOURCE.select('#CHROMPOSREFALT').with_row_index().last().select('index').collect().item()
+    start = perf_counter()
+    total_rows = DATA_SOURCE.select(pl.len()).collect().item()
+    logger.debug(f"Counted a total of {total_rows} rows (in {perf_counter()-start} s)")
+
 
     app = Dash()
 
@@ -238,6 +277,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
                     "tooltipShowDelay": 0,
+                    "enableCellTextSelection": True,
+                    "skipHeaderOnAutoSize": True,
                 },
             ),
             dcc.Store(id="filter-model"),
@@ -258,11 +299,15 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         columns = [col["field"] for col in columnDefs]
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
         partial = ldf[request["startRow"] : request["endRow"]].collect()
-        rows_count = partial.shape[0]
         dict_data = {
             "rowData": partial.to_dicts(),
-            "rowCount": rows_count
         }
+        dict_data["rowCount"] = total_rows
+        rows_count = partial.shape[0]
+        if rows_count == 0:
+            # FIXME: Bellow stops scrolling when consumed all filtered rows
+            #dict_data["rowCount"] = 0
+            pass
         logger.debug(f"Nb rows after filtering: {rows_count}")
         return dict_data, request["filterModel"]
 
