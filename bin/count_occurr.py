@@ -29,7 +29,7 @@ def count_occurr(LAKE):
 
     # Cast 'found_in' col to 'list(str)' dtype
     lf = lf.with_columns(
-        pl.cast_list([pl.col('found_in')])
+        pl.concat_list([pl.col('found_in')])
     ).sink_parquet(f"{LAKE}/occurrences/all_samples.parquet")
 
 
