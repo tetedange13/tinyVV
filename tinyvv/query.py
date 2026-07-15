@@ -1,5 +1,4 @@
 import polars as pl
-import os.path as osp
 
 
 def lake_schema(LAKE):
