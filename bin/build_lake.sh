@@ -40,6 +40,7 @@ PREFIX_ANN=vep_ann
 #   We use the excellent vcf-reformatter to do that (https://github.com/flalom/vcf-reformatter)
 vcf-reformatter \
 	--transcript-handling split \
+	--compress \
 	$LAKE_PATH/annotations/${PREFIX_ANN}.vcf.gz
 rm -v vep_ann_header.txt  # Useless intermediate file
 
@@ -47,12 +48,12 @@ rm -v vep_ann_header.txt  # Useless intermediate file
 # WARN: Works only on plain text TSV (not compressed)
 # MEMO: 'grch38.92.csv' is simply a file with length of each chromosome
 bin/tsv_to_parquet.py \
-	${PREFIX_ANN}_reformatted.tsv \
+	${PREFIX_ANN}_reformatted.tsv.gz \
 	$LAKE_PATH/grch38.92.csv \
 	$LAKE_PATH/annotations/${PREFIX_ANN}.parquet
 
 # Clean-up intermediate TSV
-rm -v ${PREFIX_ANN}_reformatted.tsv
+rm -v ${PREFIX_ANN}_reformatted.tsv.gz
 
 exit
 

@@ -19,11 +19,12 @@ if __name__ == "__main__":
 
     # Read header and force str type for all 'ANN_' cols:
     # Otherwise issues with inferred dtypes for some cols
-    # ENH: Do that with polars to support compressed TSV ???
-    with open(inTsv, 'r') as inTsv_file:
-        for a_line in inTsv_file:
-            header = a_line.rstrip('\n').split('\t')
-            break
+    header = pl.read_csv(
+        inTsv,
+        separator="\t",
+        has_header=False,
+        n_rows=1,
+    ).transpose()['column_0'].to_list()
     schema_override = {c:pl.String for c in header if c.startswith('ANN_') or c.startswith('CSQ_')}
     schema_override['POS'] = pl.UInt64
 
