@@ -20,14 +20,16 @@ def count_occurr(LAKE):
     query_occurr = """
     SELECT
         id,
-        count(*),
-        STRING_AGG(sample),
+        count(*) AS occurrence,
+        STRING_AGG(sample) AS found_in,
     FROM all_samples
     GROUP BY id;
     """
-    ctx.execute(
-        query_occurr
-    ).rename({'len':'occurrence'}
+    lf = ctx.execute(query_occurr)
+
+    # Cast 'found_in' col to 'list(str)' dtype
+    lf = lf.with_columns(
+        pl.cast_list([pl.col('found_in')])
     ).sink_parquet(f"{LAKE}/occurrences/all_samples.parquet")
 
 

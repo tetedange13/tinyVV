@@ -142,6 +142,8 @@ def main():
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
     wanted_cols = ["#CHROMPOSREFALT"]
+    if args.input:
+        wanted_cols += ["occurrence", "found_in"]
     wanted_cols += GT_cols
     wanted_cols += GQ_cols
     wanted_cols += DP_cols
@@ -216,6 +218,10 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # Change filterType of 'sort' column:
     if config_OK and "sort" in conf.keys():
         pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
+
+    # Change filterType of 'occurrence' column (if defined):
+    if 'occurrence' in pre_columnDefs.keys():
+        pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
 
     # Add tooltips:
     # First add 'FORMAT' cols

@@ -32,6 +32,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     all_parquets = { 'joint_gt': joint_gt }
 
     # Add 'variants' for context passing:
+    all_parquets["c"] = pl.scan_parquet(f'{LAKE}/occurrences/*.parquet')
     all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
     # Same for annot but 1st rename cols with '.' inside, cuz not supported:
     ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
@@ -56,6 +57,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
         pos AS position,
         ref AS reference,
         alt AS alternate,
+        occurrence,
+        found_in,
         {gt_cols},
         {ad_cols},
         {dp_cols},
@@ -63,6 +66,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
         {ann_cols},
 
         FROM joint_gt
+            LEFT JOIN c
+            ON id=c.id
             LEFT JOIN v
             ON id=v.id
             LEFT JOIN ann
