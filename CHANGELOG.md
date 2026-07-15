@@ -28,11 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
-- Put all FORMAT data in 1st GT col ? (same as Achab)
 
 <br>
 
-## [0.5.2] - Unreleased
+## [0.6.0] - 2026-07-15
 
 ### Fixed
 
@@ -48,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Other FORMAT columns (GQ, DP, AD) and compute AB (VAF)
 - "1st_sample_GT" has tooltip with FORMAT values of other samples
-- "bin/build_lake.sh" now use VEP/SnpEff ann/csq annotatios=ns by default (based on script "bin/tsv_to_parquet.py")
+- "bin/build_lake.sh" now use VEP/SnpEff ann/csq annotations by default (based on script "bin/nestedAnn_to_parquet.py")
 - [pq_lake] Building lake compute variants occurrence, added as column (with list of samples supporting occurrence as tooltip)
 
 <br>
