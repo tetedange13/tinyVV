@@ -255,7 +255,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                 defaultColDef={
                     "sortable": False,
                     "filter": True,
-                    "minWidth": 25,
+                    "minWidth": 50,
                 },
                 rowModelType="infinite",
                 columnSize="sizeToFit",
@@ -291,13 +291,15 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         columns = [col["field"] for col in columnDefs]
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
         partial = ldf[request["startRow"] : request["endRow"]].collect()
-        rows_count = partial.shape[0]
         dict_data = {
             "rowData": partial.to_dicts(),
         }
         dict_data["rowCount"] = total_rows
+        rows_count = partial.shape[0]
         if rows_count == 0:
-            dict_data["rowCount"] = 0
+            # FIXME: Bellow stops scrolling when consumed all filtered rows
+            #dict_data["rowCount"] = 0
+            pass
         logger.debug(f"Nb rows after filtering: {rows_count}")
         return dict_data, request["filterModel"]
 
