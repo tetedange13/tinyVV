@@ -29,9 +29,9 @@ echo "Wrote: $(ls -d $LAKE_PATH/uniq_variants/*)"
 
 
 # Compute occurrence of each variant
+echo "Computing '$LAKE_PATH/occurrences/all_samples.parquet' with occurrences of each variant for whole lake.."
 mkdir -p $LAKE_PATH/occurrences
 bin/count_occurr.py $LAKE_PATH
-echo "Wrote: '$LAKE_PATH/occurrences/all_samples.parquet' with occurrences of each variant for whole lake"
 
 
 # Add annotations:

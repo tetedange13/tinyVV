@@ -3,6 +3,7 @@
 
 import polars as pl
 import sys
+from time import perf_counter
 
 
 def count_occurr(LAKE):
@@ -32,4 +33,6 @@ def count_occurr(LAKE):
 
 if __name__ == "__main__":
     # 1 arg = LAKE_PATH
+    start = perf_counter()
     count_occurr(sys.argv[1])
+    print(f"Took {perf_counter()-start} seconds")
