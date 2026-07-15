@@ -114,6 +114,7 @@ python -m tinyvv \
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
 - VCF filenames cannot contain '.' symbol (except for the extension)
 - When filtering, infinite scroll continues even if nothing to show (empty rows)
+- Cannot filter on 'AD' column (crash app due to type incompatibility)
 - [parquets_lake] Empty values in ANN are shown as '.' (vs null in "single_pq" input)
 
 <br>
