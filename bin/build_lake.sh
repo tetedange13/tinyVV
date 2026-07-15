@@ -35,8 +35,8 @@ bin/count_occurr.py $LAKE_PATH
 
 
 # Add annotations:
-#   At this step normally to should annotate 'uniq_variants/*' with your favorite annotator
-#   $ vep --input niq_variants/chr1.vcf.gz
+#   At this step normally to should annotate 'uniq_variants/chr*' with your favorite annotator
+#   $ vep --input uniq_variants/chr1.vcf.gz
 #   But here we use an already annotated VCF
 
 
@@ -51,9 +51,8 @@ vcf-reformatter \
 rm -v vep_ann_header.txt  # Useless intermediate file
 
 # Then we add variant planer's id using dedicated script:
-# WARN: Works only on plain text TSV (not compressed)
 # MEMO: 'grch38.92.csv' is simply a file with length of each chromosome
-bin/tsv_to_parquet.py \
+bin/nestedAnn_to_parquet.py \
 	${PREFIX_ANN}_reformatted.tsv.gz \
 	$LAKE_PATH/grch38.92.csv \
 	$LAKE_PATH/annotations/${PREFIX_ANN}.parquet
