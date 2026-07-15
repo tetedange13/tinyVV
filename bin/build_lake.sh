@@ -28,6 +28,12 @@ variantplaner struct -i $LAKE_PATH/variants/*.parquet -- \
 echo "Wrote: $(ls -d $LAKE_PATH/uniq_variants/*)"
 
 
+# Compute occurrence of each variant
+mkdir -p $LAKE_PATH/occurrences
+bin/count_occurr.py $LAKE_PATH
+echo "Wrote: '$LAKE_PATH/occurrences/all_samples.parquet' with occurrences of each variant for whole lake"
+
+
 # Add annotations:
 #   At this step normally to should annotate 'uniq_variants/*' with your favorite annotator
 #   $ vep --input niq_variants/chr1.vcf.gz
