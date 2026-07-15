@@ -42,12 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Previous commit broke "cols in tooltip are hidden" behaviour
 - Sort column is automatically added (even if not in "col_selection")
 - Auto-size columns width
+- "blank / non-blank" filtering was broken
 
 ### Added
 
 - Other FORMAT columns (GQ, DP, AD) and compute AB (VAF)
 - "1st_sample_GT" has tooltip with FORMAT values of other samples
 - "bin/build_lake.sh" now use VEP/SnpEff ann/csq annotatios=ns by default (based on script "bin/tsv_to_parquet.py")
+- [pq_lake] Building lake compute variants occurrence, added as column (with list of samples supporting occurrence as tooltip)
 
 <br>
 
