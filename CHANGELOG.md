@@ -31,6 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [0.6.1] - 2026-07-16
+
+### Fixed
+
+- Set correct "filterType" for other FORMAT columns
+- Disable filtering on "AD" column for now (dtype incompatibily)
+
+<br>
+
 ## [0.6.0] - 2026-07-15
 
 ### Fixed

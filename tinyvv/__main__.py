@@ -221,6 +221,14 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     if config_OK and "sort" in conf.keys():
         pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
 
+    # Change filterType of relevant 'FORMAT' column:
+    nb_format_cols = GQ_cols + DP_cols + AB_cols
+    for fmt_col in nb_format_cols:
+        pre_columnDefs[fmt_col]["filter"] = "agNumberColumnFilter"
+    # Disable filtering on 'AD' cols (dtype incompat):
+    for fmt_col in AD_cols:
+        pre_columnDefs[fmt_col]["filter"] = False
+
     # Change filterType of 'occurrence' column (if defined):
     if 'occurrence' in pre_columnDefs.keys():
         pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
