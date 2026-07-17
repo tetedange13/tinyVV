@@ -36,6 +36,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
     all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
     # Same for annot but 1st rename cols with '.' inside, cuz not supported:
     ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
+    if cols_list:
+        ann = ann.select(['id'] + cols_list)
     rename_dict = {c:c.replace('.', '_') for c in ann.collect_schema().names() if '.' in c}
     all_parquets["ann"] = ann.rename(rename_dict)
 
