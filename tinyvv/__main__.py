@@ -51,6 +51,8 @@ def main():
         logging.debug(nice_dict(conf))
     else:
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
+        # Declare 'conf' anyway cuz used for 'agg_in_tooltip' on occurrence, GT:
+        conf = {"agg_in_tooltip": {"occurrence": None}}
 
     # Add columns selected by user:
     if config_OK and 'col_selection' in conf.keys():
