@@ -181,9 +181,10 @@ def main():
     logger.debug(nice_dict(dict_schema))
 
     # Bellow is a kind of assert (FAIL if selected wrong cols):
-    logger.info("Show first 10 rows of data:")
+    start_head = perf_counter()
     head_of_data = DATA_SOURCE.head().collect()
     logger.info(head_of_data)
+    logger.info(f"Showed first 10 rows of data (in {perf_counter()-start_head} seconds)")
 
     # Add hyperlink to 'chr-pos-ref-alt' col:
     # ENH: Use MobiDetails instead (API key required to query variant)
@@ -308,6 +309,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             return no_update
         columns = [col["field"] for col in columnDefs]
         ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
+        start_call = perf_counter()
         partial = ldf[request["startRow"] : request["endRow"]].collect()
         dict_data = {
             "rowData": partial.to_dicts(),
@@ -318,7 +320,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             # FIXME: Bellow stops scrolling when consumed all filtered rows
             #dict_data["rowCount"] = 0
             pass
-        logger.debug(f"Nb rows after filtering: {rows_count}")
+        logger.debug(f"Nb rows after filtering: {rows_count} (in {perf_counter()-start_call} seconds)")
         return dict_data, request["filterModel"]
 
     app.run(debug=False)
