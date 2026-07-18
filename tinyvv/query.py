@@ -77,3 +77,13 @@ def lake_data(LAKE, samples_list, cols_list=None):
     """
     print(query_lf)
     return ctx.execute(query_lf)
+
+
+if __name__ == "__main__":
+    sliced = lake_data("parquets_lake2/", ["HG001", "HG002", "HG003", "HG004"])[1:100]
+    partial, profile_df = sliced.profile()
+    profile_df.with_columns([
+    (pl.col("end") - pl.col("start")).alias("duration")
+]).with_columns([
+    (pl.col("duration") / pl.col("duration").sum() * 100).alias("percent_total")
+]).write_csv('profile.tsv', separator="\t")
