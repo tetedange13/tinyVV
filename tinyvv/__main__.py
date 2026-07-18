@@ -283,7 +283,9 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     "rowHeight": 42,
                     # The number of rows rendered outside the viewable area the grid renders.
                     # Default=10
-                    "rowBuffer": 50,
+                    "rowBuffer": 100,
+                    # Number of rows sent by server (default=100)
+                    "cacheBlockSize": 50000,
                     # How many blocks to keep in the store. Default is no limit, so every requested block is kept.
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
@@ -321,6 +323,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             #dict_data["rowCount"] = 0
             pass
         logger.debug(f"Nb rows after filtering: {rows_count} (in {perf_counter()-start_call} seconds)")
+        logger.debug(f"Estimated dataFrame size: {partial.estimated_size(unit='mb')} MB")
         return dict_data, request["filterModel"]
 
     app.run(debug=False)
