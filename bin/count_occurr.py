@@ -40,4 +40,4 @@ if __name__ == "__main__":
     # 1 arg = LAKE_PATH
     start = perf_counter()
     count_occurr(sys.argv[1])
-    print(f"Took {perf_counter()-start} seconds")
+    print(f"Occurrence computation took {perf_counter()-start} seconds")
