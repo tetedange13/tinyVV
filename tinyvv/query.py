@@ -1,4 +1,5 @@
 import polars as pl
+#pl.Config.set_engine_affinity("streaming")
 
 
 def lake_schema(LAKE):
@@ -81,6 +82,18 @@ def lake_data(LAKE, samples_list, cols_list=None):
 
 if __name__ == "__main__":
     sliced = lake_data("parquets_lake2/", ["HG001", "HG002", "HG003", "HG004"])[1:100]
+
+    # Show query exec
+    # MEMO: Only 'stream' engine has 'physical' plan
+    # MEMO: Run code with 'DISPLAY=":0"'
+    sliced.show_graph(
+        engine="streaming",
+        plan_stage="physical",
+        show=False,
+        output_path="plan.png",
+    )
+
+    # Collect and profile query:
     partial, profile_df = sliced.profile()
     profile_df.with_columns([
     (pl.col("end") - pl.col("start")).alias("duration")
