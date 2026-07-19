@@ -67,6 +67,7 @@ if __name__ == "__main__":
         chrom2length.lf,
     ).drop(
         ['chr', 'pos', 'ref', 'alt']
+    ).sort(by='id'
     )
     print(tsv_with_id.head().collect())
 

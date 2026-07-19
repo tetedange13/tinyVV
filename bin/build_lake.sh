@@ -8,7 +8,7 @@ LAKE_PATH=$1
 # Convert VCFs to parquet:
 # There are split between 'variants' and 'genotypes'
 # All linked by an ID representing each variant
-mkdir -p $LAKE_PATH/variants $LAKE_PATH/genotypes/samples/
+mkdir -p $LAKE_PATH/variants $LAKE_PATH/genotypes/samples/ $LAKE_PATH/genotypes/sorted
 
 # WARN: Bellow expects a 'vcf' subdir, with VCFs to convert
 for vcf_path in $(ls $LAKE_PATH/vcf/*.vcf.gz)
@@ -17,8 +17,10 @@ do
 	variantplaner vcf2parquet -i ${vcf_path} \
 		variants -o $LAKE_PATH/variants/${sample_name}.parquet \
 		genotypes -o $LAKE_PATH/genotypes/samples/${sample_name}.parquet
+	bin/sort_by_id.py $LAKE_PATH $LAKE_PATH/genotypes/samples/${sample_name}.parquet
 	echo "Wrote: '$LAKE_PATH/variants/${sample_name}.parquet' and: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
 done
+mv -v -f $LAKE_PATH/genotypes/sorted/* $LAKE_PATH/genotypes/samples
 
 
 # Compute parquets with all uniq variants (for annotation):
@@ -26,6 +28,15 @@ done
 variantplaner struct -i $LAKE_PATH/variants/*.parquet -- \
 	variants -o $LAKE_PATH/uniq_variants/
 echo "Wrote: $(ls -d $LAKE_PATH/uniq_variants/*)"
+
+# Sort 'uniq_variants/*' by id:
+for a_pq in $(ls -d $LAKE_PATH/uniq_variants/*.parquet); do
+	bin/sort_by_id.py $LAKE_PATH $a_pq
+done
+mv -v -f $LAKE_PATH/genotypes/sorted/* $LAKE_PATH/genotypes/uniq_variants
+
+# Remove intermediate dir
+rm -r $LAKE_PATH/genotypes/sorted
 
 
 # Compute occurrence of each variant
