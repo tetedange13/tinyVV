@@ -33,7 +33,7 @@ echo "Wrote: $(ls -d $LAKE_PATH/uniq_variants/*)"
 for a_pq in $(ls -d $LAKE_PATH/uniq_variants/*.parquet); do
 	bin/sort_by_id.py $LAKE_PATH $a_pq
 done
-mv -v -f $LAKE_PATH/genotypes/sorted/* $LAKE_PATH/genotypes/uniq_variants
+mv -v -f $LAKE_PATH/genotypes/sorted/* $LAKE_PATH/uniq_variants
 
 # Remove intermediate dir
 rm -r $LAKE_PATH/genotypes/sorted
