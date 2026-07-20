@@ -37,12 +37,11 @@ def lake_data(LAKE, samples_list, cols_list=None):
     # Add 'variants' for context passing:
     all_parquets["c"] = pl.scan_parquet(f'{LAKE}/occurrences/*.parquet')
     all_parquets["v"] = pl.scan_parquet(f'{LAKE}/uniq_variants/*.parquet')
-    # Same for annot but 1st rename cols with '.' inside, cuz not supported:
+    # Same for annot:
     ann = pl.scan_parquet(f'{LAKE}/annotations/*.parquet')
     if cols_list:
         ann = ann.select(['id'] + cols_list)
-    rename_dict = {c:c.replace('.', '_') for c in ann.collect_schema().names() if '.' in c}
-    all_parquets["ann"] = ann.rename(rename_dict)
+    all_parquets["ann"] = ann
 
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)

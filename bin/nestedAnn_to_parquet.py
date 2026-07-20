@@ -52,9 +52,10 @@ if __name__ == "__main__":
     }
     annotations = annotations.rename(vp_rename)
 
-    # Rename to remove 'prefix' (eg: ANN_ or CSQ_):
+    # Rename to remove 'prefix' (eg: ANN_ or CSQ_) + Remove '.' in colname:
+    # MEMO: '.' (dot) in colname not supported (interfer with SQL syntax)
     source_colnames = annotations.collect_schema().names()
-    prf_rename = {c:c.replace('ANN_','').replace('CSQ_','') for c in source_colnames if c.startswith('ANN_') or c.startswith('CSQ_')}
+    prf_rename = {c:c.replace('ANN_','').replace('CSQ_','').replace('.', '_') for c in source_colnames if c.startswith('ANN_') or c.startswith('CSQ_')}
     annotations = annotations.rename(prf_rename)
 
     final_schema = annotations.collect_schema()
