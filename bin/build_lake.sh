@@ -17,7 +17,7 @@ do
 	variantplaner vcf2parquet -i ${vcf_path} \
 		variants -o $LAKE_PATH/variants/${sample_name}.parquet \
 		genotypes -o $LAKE_PATH/genotypes/samples/${sample_name}.parquet
-	bin/sort_by_id.py $LAKE_PATH $LAKE_PATH/genotypes/samples/${sample_name}.parquet
+	bin/transform_gt.py $LAKE_PATH/genotypes/samples/${sample_name}.parquet
 	echo "Wrote: '$LAKE_PATH/variants/${sample_name}.parquet' and: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
 done
 mv -v -f $LAKE_PATH/genotypes/sorted/* $LAKE_PATH/genotypes/samples

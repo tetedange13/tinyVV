@@ -11,6 +11,7 @@ from .styling import colorize_GT, aggKey_to_func, format_to_tooltip
 from .utils import parse_args, nice_dict
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
+#pl.Config.set_engine_affinity("streaming")
 
 
 # MAIN
@@ -100,11 +101,7 @@ def main():
         AD_cols = [ f"{s}_AD" for s in args.input ]
         DP_cols = [ f"{s}_DP" for s in args.input ]
         GQ_cols = [ f"{s}_GQ" for s in args.input ]
-        dict_gt = {"1":"0/1", "2":"1/1"}
         for gt_col in GT_cols:
-            DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.col(gt_col).cast(str).replace(dict_gt)
-            )
             DATA_SOURCE = DATA_SOURCE.with_columns(
                 pl.col(gt_col).fill_null("0/0")
             )
@@ -136,9 +133,6 @@ def main():
     for a_ad in AD_cols:
         ab_colname = a_ad.replace('_AD', '_AB')
         dp_colname = a_ad.replace('_AD', '_DP')
-        DATA_SOURCE = DATA_SOURCE.with_columns(
-            (pl.col(a_ad).list[1]/pl.col(dp_colname)).alias(ab_colname)
-        )
         AB_cols.append(ab_colname)
 
     # wanted_cols:

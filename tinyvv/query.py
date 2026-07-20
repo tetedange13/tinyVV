@@ -14,7 +14,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     pqs_list = []
     for s in samples_list:
         pq_path = f"{LAKE}/genotypes/samples/{s}.parquet"
-        selected_cols = ['id', 'gt', 'ad', 'dp', 'gq']
+        selected_cols = ['id', 'gt', 'gq', 'ad', 'dp', 'ab']
         rename_dict = { c:f"{s}_{c.upper()}" for c in selected_cols if c != 'id' }
         pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
         pqs_list.append(pq_to_join)
@@ -30,6 +30,8 @@ def lake_data(LAKE, samples_list, cols_list=None):
             coalesce=True,
             maintain_order='left_right'
         )
+    # WARN: 'concat diag' not doing a full join
+    #joint_gt = pl.concat(pqs_list, how='diagonal')
     all_parquets = { 'joint_gt': joint_gt }
 
     # Add 'variants' for context passing:
@@ -46,9 +48,10 @@ def lake_data(LAKE, samples_list, cols_list=None):
     ctx = pl.SQLContext(frames=all_parquets)
     
     gt_cols = ','.join([f"{x}_GT" for x in samples_list])
+    gq_cols = ','.join([f"{x}_GQ" for x in samples_list])
     ad_cols = ','.join([f"{x}_AD" for x in samples_list])
     dp_cols = ','.join([f"{x}_DP" for x in samples_list])
-    gq_cols = ','.join([f"{x}_GQ" for x in samples_list])
+    ab_cols = ','.join([f"{x}_AB" for x in samples_list])
     if cols_list:
         ann_cols = ','.join([a for a in cols_list])
     else:
@@ -63,9 +66,10 @@ def lake_data(LAKE, samples_list, cols_list=None):
         occurrence,
         found_in,
         {gt_cols},
+        {gq_cols},
         {ad_cols},
         {dp_cols},
-        {gq_cols},
+        {ab_cols},
         {ann_cols},
 
         FROM joint_gt
@@ -81,7 +85,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
 
 
 if __name__ == "__main__":
-    sliced = lake_data("parquets_lake2/", ["HG001", "HG002", "HG003", "HG004"])[1:100]
+    sliced = lake_data("parquets_lake2/", ["HG001", "HG002", "HG003", "HG004"])[0:100]
 
     # Show query exec
     # MEMO: Only 'stream' engine has 'physical' plan
