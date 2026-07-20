@@ -20,19 +20,13 @@ def lake_data(LAKE, samples_list, cols_list=None):
         pqs_list.append(pq_to_join)
 
     # Full join on id:
-    # ENH: Find a way to do that in SQL bellow ???
-    joint_gt = pqs_list[0]  # Init to 1st pq
-    for pq in pqs_list[1:]:
-        joint_gt = joint_gt.join(
-            pq,
-            how='full',
-            on='id',
-            coalesce=True,
-            maintain_order='left_right'
-        )
+    # MEMO: 'NATURAL' means 'join on common cols + coalesce'
+    # WARN: Should I make sure 'id' is the only common col ???
+    join_gt_expr = '\n'.join([ f"NATURAL FULL JOIN {samples_list[other+1]}" for other,_ in enumerate(pqs_list[1:]) ])
+
     # WARN: 'concat diag' not doing a full join
     #joint_gt = pl.concat(pqs_list, how='diagonal')
-    all_parquets = { 'joint_gt': joint_gt }
+    all_parquets = { f"{samples_list[i]}":pq for i, pq in enumerate(pqs_list) }
 
     # Add 'variants' for context passing:
     all_parquets["c"] = pl.scan_parquet(f'{LAKE}/occurrences/*.parquet')
@@ -57,6 +51,12 @@ def lake_data(LAKE, samples_list, cols_list=None):
         ann_cols = ','.join([a for a in all_parquets["ann"].collect_schema().names() if not a.endswith('id')])
 
     query_lf = f"""
+    WITH joint_gt AS (
+        SELECT *
+            FROM {samples_list[0]}
+            {join_gt_expr}
+    )
+
     SELECT
         chr as chromosome,
         pos AS position,
@@ -72,19 +72,18 @@ def lake_data(LAKE, samples_list, cols_list=None):
         {ann_cols},
 
         FROM joint_gt
-            LEFT JOIN c
-            ON id=c.id
-            LEFT JOIN v
-            ON id=v.id
-            LEFT JOIN ann
-            ON id=ann.id
+            LEFT JOIN c USING(id)
+            LEFT JOIN v USING(id)
+            LEFT JOIN ann USING(id)
     """
     print(query_lf)
     return ctx.execute(query_lf)
 
 
 if __name__ == "__main__":
-    sliced = lake_data("parquets_lake2/", ["HG001", "HG002", "HG003", "HG004"])[0:100]
+    sliced = lake_data("parquets_lake3/", ["HG001", "HG002", "HG003", "HG004"])[0:100]
+    print(sliced.explain(optimized=True))
+    print(sliced.collect_schema())
 
     # Show query exec
     # MEMO: Only 'stream' engine has 'physical' plan
