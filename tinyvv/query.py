@@ -58,6 +58,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     )
 
     SELECT
+        id,
         chr as chromosome,
         pos AS position,
         ref AS reference,

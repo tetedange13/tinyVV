@@ -138,6 +138,8 @@ def main():
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
     wanted_cols = ["#CHROMPOSREFALT"]
+    #wanted_cols += ['id']  # DEBUG only
+
     if args.input:
         wanted_cols += ["occurrence", "found_in"]
     wanted_cols += GT_cols
