@@ -14,13 +14,19 @@ mkdir -p $LAKE_PATH/variants $LAKE_PATH/genotypes/samples/ $LAKE_PATH/genotypes/
 for vcf_path in $(ls $LAKE_PATH/vcf/*.vcf.gz)
 do
 	sample_name=$(basename ${vcf_path} .vcf.gz)
-	variantplaner vcf2parquet -i ${vcf_path} \
-		variants -o $LAKE_PATH/variants/${sample_name}.parquet \
-		genotypes -o $LAKE_PATH/genotypes/samples/${sample_name}.parquet
-	bin/transform_gt.py $LAKE_PATH/genotypes/samples/${sample_name}.parquet
-	echo "Wrote: '$LAKE_PATH/variants/${sample_name}.parquet' and: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
+
+	if [ ! -f $LAKE_PATH/genotypes/samples/${sample_name}.parquet ]; then
+		variantplaner vcf2parquet -i ${vcf_path} \
+			variants -o $LAKE_PATH/variants/${sample_name}.parquet \
+			genotypes -o $LAKE_PATH/genotypes/samples/${sample_name}.parquet
+		bin/transform_gt.py $LAKE_PATH/genotypes/samples/${sample_name}.parquet
+		mv -v -f $LAKE_PATH/genotypes/sorted/${sample_name}.parquet $LAKE_PATH/genotypes/samples
+		echo "Wrote: '$LAKE_PATH/variants/${sample_name}.parquet' and: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
+
+	else
+		echo "Already found: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
+	fi
 done
-mv -v -f $LAKE_PATH/genotypes/sorted/* $LAKE_PATH/genotypes/samples
 
 
 # Compute parquets with all uniq variants (for annotation):
