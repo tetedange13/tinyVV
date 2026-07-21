@@ -6,17 +6,19 @@
 
 TinyVV can run over a lake of parquet files, but you have to build it first
 
-We provide the script `bin/build_lake.sh <LAKE_PATH>` to do that
+We provide the script `bin/build_lake.sh <LAKE_PATH>` that creates all required subdirs
 
 It relies heavily on the excellent variant-planer package, plus a few other custom steps
 
+### An "id" to rule them all
+
 One key feature of variant-planer is computing an "id" for each variant
 
-Which is present in all parquets (so not described in the rest of this doc)
+Which is present in all parquets (so not described explicitly in the rest of this doc)
 
 And used as primary key linking them, to perform easy join operations
 
-One step common to all, is sorting by "id". This could speed up
+One step common to all, is sorting by "id". This could speed up some operations (but not used currently)
 
 <br>
 
@@ -28,7 +30,8 @@ In which you put VCFs to build your lake from
 
 Ideally single-sample VCFs, not multi-samples ones (untested on multi-samples)
 
-### TODO
+### Lake increment
+
 If an input VCF already has a parquet under "genotypes/samples", it is not recomputed
 
 This way you can easily increment your lake by simply adding new VCFs to "vcf" subdir
@@ -39,15 +42,13 @@ Other steps are **always** recomputed (i.e. occurrences, uniq_variants)
 
 ## Genotypes
 
-`build_lake.sh` creates a "genotypes/samples" subdir
+Parquets in "genotypes/samples" subdir contains variants splitted by samples
 
-Which contains variants splitted by samples, but only FORMAT fields from VCFs
-
-I.e. GT, but also AD and DP example
+But only FORMAT fields from VCFs, i.e. GT, but also AD and DP example
 
 Another interesting column is "sample", which is the name of the sample showing the variant/genotype
 
-As a post-processing, genotypes are converted from "1" ; "2" (originally from variant-planer)
+As a post-processing, genotypes are converted from "1" ; "2" (originally produced by variant-planer)
 
 To good-old "0/1" ; "1/1"
 
@@ -59,7 +60,9 @@ Parquets in "variants" subdir contains chr ; pos ; ref ; alt info of each varian
 
 They are only used as intermediate files to build "uniq_variants" subdir
 
-This subdir is self-explanatory and is used both :
+This 2nd subdir is self-explanatory and parquets are splitted by chromosome
+
+It is used both :
 
 - To make variant annotation more efficient (annotate each variant once, instead of 1 time x each sample)
 - To get back good-old "chr-pos-ref-alt" info, instead of efficient but obscure "id"
@@ -78,7 +81,9 @@ This way we can have the list of samples support each occurrence ("found_in" col
 
 ## Annotations
 
-This part is not handled by `build_lake.sh` script
+TinyVV required parquets with variants annotation under "annotations" subdir
+
+This part is not handled by `build_lake.sh` script, but bellow details steps to follow
 
 ### Theorical steps
 
@@ -95,11 +100,13 @@ We advice the excelle,t `vcf-reformatter` to do that.
 Then we provide `bin/nestedAnn_to_parquet.py` which takes output TSV from `vcf-reformatter` and add "id"
 (using variant-planer's python API)
 
+MEMO: You can leave annotation parquets splitted by chromosome, this is 100% handled
+
 ### Example data
 
 We provide already annotated VCFs under "examples/parquets_lake/annotations"
 
-Following theorical steps above, we start at "3"
+Following theorical steps above, we start at step "3"
 
 #### Nested annotations scenario
 
@@ -131,3 +138,7 @@ variantplaner vcf2parquet \
         annotations -o examples/parquets_lake/annotations/annovar_MPA.parquet \
         --rename-id annovar_id
 ```
+
+WARNING 1: Having annotation parquets annotated by different tools is not supported
+
+WARNING 2: You better use same parameters (databases versions etc) to produce all annotations parquet (not tested otherwise)
