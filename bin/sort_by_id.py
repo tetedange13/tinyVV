@@ -15,5 +15,8 @@ if __name__ == "__main__":
     start = perf_counter()
     pl.scan_parquet(in_pq
         ).sort(by='id'
-        ).sink_parquet(f"{LAKE}/genotypes/sorted/{basename(in_pq)}")
+        ).sink_parquet(
+            f"{LAKE}/genotypes/sorted/{basename(in_pq)}",
+            compression='zstd',
+        )
     print(f"Sort by 'id' took {perf_counter()-start} seconds")

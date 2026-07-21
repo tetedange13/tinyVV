@@ -24,6 +24,9 @@ if __name__ == "__main__":
     ).with_columns(pl.col('gt').cast(str).replace(dict_gt)
     ).with_columns(ab=pl.col('ad').list[1]/pl.col('dp')
     ).sort(by='id'
-    ).sink_parquet(pq_path.replace('/samples/', '/sorted/'))
+    ).sink_parquet(
+        pq_path.replace('/samples/', '/sorted/'),
+        compression='zstd',
+    )
 
     print(f"Genotype parquet transformation took {perf_counter()-start} seconds")

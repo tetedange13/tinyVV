@@ -33,7 +33,10 @@ def count_occurr(LAKE):
     lf = lf.with_columns(
         pl.concat_list([pl.col('found_in')])
     ).sort(by='id'
-    ).sink_parquet(f"{LAKE}/occurrences/all_samples.parquet")
+    ).sink_parquet(
+        f"{LAKE}/occurrences/all_samples.parquet",
+        compression='zstd',
+    )
 
 
 if __name__ == "__main__":
