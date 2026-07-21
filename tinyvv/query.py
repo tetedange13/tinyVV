@@ -58,7 +58,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     )
 
     SELECT
-        id,
+        joint_gt.id AS id,
         chr as chromosome,
         pos AS position,
         ref AS reference,
@@ -73,9 +73,9 @@ def lake_data(LAKE, samples_list, cols_list=None):
         {ann_cols},
 
         FROM joint_gt
-            LEFT JOIN c USING(id)
-            LEFT JOIN v USING(id)
-            LEFT JOIN ann USING(id)
+            LEFT JOIN c ON id=c.id
+            LEFT JOIN v ON id=v.id
+            LEFT JOIN ann ON id=ann.id
     """
     print(query_lf)
     return ctx.execute(query_lf)
