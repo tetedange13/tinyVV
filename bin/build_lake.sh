@@ -45,6 +45,8 @@ mkdir -p $LAKE_PATH/occurrences
 bin/count_occurr.py $LAKE_PATH
 
 
+exit
+
 # Add annotations:
 #   At this step normally to should annotate 'uniq_variants/chr*' with your favorite annotator
 #   $ vep --input uniq_variants/chr1.vcf.gz
