@@ -106,11 +106,6 @@ def main():
             DATA_SOURCE = DATA_SOURCE.with_columns(
                 pl.col(gt_col).fill_null("0/0")
             )
-            # Convert to 'List(str)':
-            # ENH: Not very efficient to concat_list for later str.join('')
-            DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.concat_list([pl.col(gt_col)])
-            )
 
 
     # FROM HERE: should be independent of input type (lake or single pq)
@@ -121,12 +116,15 @@ def main():
 
     # Create 'chr-pos-ref-alt' col:
     DATA_SOURCE = DATA_SOURCE.with_columns(
-        pl.concat_list([
-            pl.col('chromosome') + '-',
-            pl.col('position').cast(str) + '-',
-            pl.col('reference') + '-',
-            pl.col('alternate'),
-        ]).alias("#CHROMPOSREFALT")
+        pl.concat_str(
+            [
+                pl.col('chromosome'),
+                pl.col('position').cast(str),
+                pl.col('reference'),
+                pl.col('alternate'),
+            ],
+            separator="-",
+        ).alias("#CHROMPOSREFALT")
     )
 
     # Create 'sample_AB' (VAF) cols:

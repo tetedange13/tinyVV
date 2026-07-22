@@ -35,13 +35,6 @@ if __name__ == "__main__":
         null_values=["."],
     )
 
-    # Turn String cols to List(str):
-    # For homogeneity with rest of project
-    for a_col in [c for c in schema_override.keys() if c != 'POS']:
-        annotations = annotations.with_columns(
-            pl.concat_list([pl.col(a_col)])
-        )
-
     # Rename columns variantplaner:
     vp_rename= {
         "CHROM":"chr",

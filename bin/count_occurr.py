@@ -33,9 +33,7 @@ def count_occurr(LAKE):
     lf = ctx.execute(query_occurr)
 
     # Cast 'found_in' col to 'list(str)' dtype
-    lf = lf.with_columns(
-        pl.concat_list([pl.col('found_in')])
-    ).sort(by='id'
+    lf.sort(by='id'
     ).sink_parquet(
         f"{LAKE}/occurrences/all_samples.parquet",
         compression='zstd',
