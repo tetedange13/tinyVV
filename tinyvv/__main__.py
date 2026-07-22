@@ -54,7 +54,7 @@ def main():
     else:
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
         # Declare 'conf' anyway cuz used for 'agg_in_tooltip' on occurrence, GT:
-        conf = {"agg_in_tooltip": {"occurrence": None}}
+        conf = {}
 
     # Add columns selected by user:
     if config_OK and 'col_selection' in conf.keys():
@@ -83,10 +83,6 @@ def main():
         # Also remove 'info_' prefix at the same time
         rename_dict = {c:c.replace('.', '_').replace('info_', '').replace('format_', '') for c in original_colnames}
         DATA_SOURCE = DATA_SOURCE.rename(rename_dict)
-        # Collect new renamed schema:
-        full_schema = DATA_SOURCE.collect_schema()
-        # List of INFO cols (with their new names):
-        all_ann_cols = [c.replace('.', '_').replace('info_', '') for c in original_colnames if c.startswith('info_')]
         # Create 'chr-pos-ref-alt' col:
         DATA_SOURCE = DATA_SOURCE.with_columns(
             pl.concat_str(
@@ -97,8 +93,20 @@ def main():
                     pl.col('alternate').list.join(separator=""),
                 ],
                 separator="-",
-            ).alias("#CHROMPOSREFALT")
+            ).alias("CHROMPOSREFALT")
         )
+        # Compute AB col (VAF):
+        for gt_col in GT_cols:
+            ad_colname = gt_col.replace('_GT', '_AD')
+            dp_colname = gt_col.replace('_GT', '_DP')
+            ab_colname = gt_col.replace('_GT', '_AB')
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                (pl.col(ad_colname).list[1]/pl.col(dp_colname)).alias(ab_colname)
+            )
+        # Collect new renamed schema:
+        full_schema = DATA_SOURCE.collect_schema()
+        # List of INFO cols (with their new names):
+        all_ann_cols = [c.replace('.', '_').replace('info_', '') for c in original_colnames if c.startswith('info_')]
 
     elif args.input:  # Lake input
         # WARN: Bellow 'full_schema' only contains ANN cols...
@@ -124,9 +132,9 @@ def main():
 
     # Get 'sample_AB' (VAF) col_names:
     AB_cols = []
-    for a_ad in AD_cols:
-        ab_colname = a_ad.replace('_AD', '_AB')
-        dp_colname = a_ad.replace('_AD', '_DP')
+    for a_gt in GT_cols:
+        ab_colname = a_gt.replace('_GT', '_AB')
+        dp_colname = a_gt.replace('_GT', '_DP')
         AB_cols.append(ab_colname)
 
     # wanted_cols:
@@ -140,8 +148,7 @@ def main():
     wanted_cols += GQ_cols
     wanted_cols += DP_cols
     wanted_cols += AD_cols
-    if args.input:
-        wanted_cols += AB_cols
+    wanted_cols += AB_cols
 
     if config_OK and 'col_selection' in conf.keys():
         wanted_cols += selected_cols

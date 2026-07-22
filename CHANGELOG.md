@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handle "no config" better
 - [pq_lake] Specify 'set_sorted(id)' in "count_occurr" was wrong
 - [pq_lake] Improve filtering and remove abusive 'List(str)->str' casts
+- [single_pq] Compute AB col too
 
 ### Changed
 
