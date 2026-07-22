@@ -38,7 +38,9 @@ def join_gt_frames(LAKE, samples_list, cols_list=None):
         {join_gt_expr}
     """
     print(query_join)
-    return ctx.execute(query_join)
+    joint_lf = ctx.execute(query_join)
+    #joint_lf.sink_parquet("joint_gt.parquet")  # DEBUG
+    return joint_lf
 
 
 def lake_data(LAKE, samples_list, cols_list=None):
@@ -56,7 +58,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
 
     # Register all lf in global namespace: ctx = pl.SQLContext(register_globals=True)
     ctx = pl.SQLContext(frames=all_parquets)
-    
+
     gt_cols = ','.join([f"{x}_GT" for x in samples_list])
     gq_cols = ','.join([f"{x}_GQ" for x in samples_list])
     ad_cols = ','.join([f"{x}_AD" for x in samples_list])
@@ -89,7 +91,9 @@ def lake_data(LAKE, samples_list, cols_list=None):
             LEFT JOIN ann ON id=ann.id
     """
     print(query_lf)
-    return ctx.execute(query_lf)
+    joint_all = ctx.execute(query_lf)
+    #joint_all.sink_parquet("joint_all.parquet")  # DEBUG
+    return joint_all
 
 
 if __name__ == "__main__":
