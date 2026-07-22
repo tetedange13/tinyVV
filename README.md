@@ -113,9 +113,10 @@ python -m tinyvv \
 - Most columns are filtered as they were "text" (including gnomAD freq for eg.)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
 - VCF filenames cannot contain '.' symbol (except for the extension)
-- When filtering, infinite scroll continues even if nothing to show (empty rows)
+- When filtering, infinite scroll continues past filtered rows (with empty rows)
 - Cannot filter on 'AD' column (crash app due to type incompatibility)
 - [parquets_lake] Empty values in ANN are shown as '.' (vs null in "single_pq" input)
+- [parquets_lake] Genotypes "0/0" are shown as "blank" but can be filtered as such (not converted for perf considerations)
 
 <br>
 

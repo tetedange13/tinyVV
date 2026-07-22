@@ -31,6 +31,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [0.7.0] - 2026-07-22
+
+### Fixed
+
+- [pq_lake] Reduce number of callbacks when scrolling
+- Handle "no config" better
+- [pq_lake] Specify 'set_sorted(id)' in "count_occurr" was wrong
+- [pq_lake] Improve filtering and remove abusive 'List(str)->str' casts
+- [single_pq] Compute AB col too
+- Correctly show "no matching rows" when filtering returns nothing. But still empty rows after filtered rows
+
+### Changed
+
+- [pq_lake] Do more transformations at lake building (-> once instead of at every callback)
+- [pq_lake] Set collect_engine to "streaming". Known bug with "in-memory" engine in Polars v1.41 and above (https://github.com/pola-rs/polars/issues/28419). "streaming" engine is expected to be faster and become default in v1.43 anyway
+- [lake_build] Do not handle "annotations" anymore
+- [lake_build] Do not recompute "genotypes/samples/sample.parquet" if exist (easier to increment lake). Other parquets are always recomputed (occurr, uniq_variants)
+
+### Added
+
+- [pq_lake] Documentation for lake building
+
+<br>
+
 ## [0.6.1] - 2026-07-16
 
 ### Fixed

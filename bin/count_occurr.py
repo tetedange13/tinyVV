@@ -16,7 +16,12 @@ def count_occurr(LAKE):
     WARN: Order of variants is random in 'occurr.parquet' ???
           Should not matter ???
     """
-    ctx = pl.SQLContext(frames={'all_samples': pl.scan_parquet(f"{LAKE}/genotypes/samples/*.parquet")})
+
+    concat_samples = pl.scan_parquet(f"{LAKE}/genotypes/samples/*.parquet"
+        ).select(['id', 'sample'])
+    #print(concat_samples.head().collect())  # DEBUG
+
+    ctx = pl.SQLContext(frames={'all_samples': concat_samples})
     query_occurr = """
     SELECT
         id,
@@ -28,13 +33,15 @@ def count_occurr(LAKE):
     lf = ctx.execute(query_occurr)
 
     # Cast 'found_in' col to 'list(str)' dtype
-    lf = lf.with_columns(
-        pl.concat_list([pl.col('found_in')])
-    ).sink_parquet(f"{LAKE}/occurrences/all_samples.parquet")
+    lf.sort(by='id'
+    ).sink_parquet(
+        f"{LAKE}/occurrences/all_samples.parquet",
+        compression='zstd',
+    )
 
 
 if __name__ == "__main__":
     # 1 arg = LAKE_PATH
     start = perf_counter()
     count_occurr(sys.argv[1])
-    print(f"Took {perf_counter()-start} seconds")
+    print(f"Occurrence computation took {perf_counter()-start} seconds")

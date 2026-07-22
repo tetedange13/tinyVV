@@ -8,16 +8,24 @@ LAKE_PATH=$1
 # Convert VCFs to parquet:
 # There are split between 'variants' and 'genotypes'
 # All linked by an ID representing each variant
-mkdir -p $LAKE_PATH/variants $LAKE_PATH/genotypes/samples/
+mkdir -p $LAKE_PATH/variants $LAKE_PATH/genotypes/samples/ $LAKE_PATH/genotypes/sorted
 
 # WARN: Bellow expects a 'vcf' subdir, with VCFs to convert
 for vcf_path in $(ls $LAKE_PATH/vcf/*.vcf.gz)
 do
 	sample_name=$(basename ${vcf_path} .vcf.gz)
-	variantplaner vcf2parquet -i ${vcf_path} \
-		variants -o $LAKE_PATH/variants/${sample_name}.parquet \
-		genotypes -o $LAKE_PATH/genotypes/samples/${sample_name}.parquet
-	echo "Wrote: '$LAKE_PATH/variants/${sample_name}.parquet' and: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
+
+	if [ ! -f $LAKE_PATH/genotypes/samples/${sample_name}.parquet ]; then
+		variantplaner vcf2parquet -i ${vcf_path} \
+			variants -o $LAKE_PATH/variants/${sample_name}.parquet \
+			genotypes -o $LAKE_PATH/genotypes/samples/${sample_name}.parquet
+		bin/transform_gt.py $LAKE_PATH/genotypes/samples/${sample_name}.parquet
+		mv -v -f $LAKE_PATH/genotypes/sorted/${sample_name}.parquet $LAKE_PATH/genotypes/samples
+		echo "Wrote: '$LAKE_PATH/variants/${sample_name}.parquet' and: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
+
+	else
+		echo "Already found: '$LAKE_PATH/genotypes/samples/${sample_name}.parquet'"
+	fi
 done
 
 
@@ -27,12 +35,23 @@ variantplaner struct -i $LAKE_PATH/variants/*.parquet -- \
 	variants -o $LAKE_PATH/uniq_variants/
 echo "Wrote: $(ls -d $LAKE_PATH/uniq_variants/*)"
 
+# Sort 'uniq_variants/*' by id:
+for a_pq in $(ls -d $LAKE_PATH/uniq_variants/*.parquet); do
+	bin/sort_by_id.py $LAKE_PATH $a_pq
+done
+mv -v -f $LAKE_PATH/genotypes/sorted/* $LAKE_PATH/uniq_variants
+
+# Remove intermediate dir
+rm -r $LAKE_PATH/genotypes/sorted
+
 
 # Compute occurrence of each variant
 echo "Computing '$LAKE_PATH/occurrences/all_samples.parquet' with occurrences of each variant for whole lake.."
 mkdir -p $LAKE_PATH/occurrences
 bin/count_occurr.py $LAKE_PATH
 
+
+exit
 
 # Add annotations:
 #   At this step normally to should annotate 'uniq_variants/chr*' with your favorite annotator

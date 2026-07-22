@@ -11,6 +11,7 @@ from .styling import colorize_GT, aggKey_to_func, format_to_tooltip
 from .utils import parse_args, nice_dict
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
+pl.Config.set_engine_affinity("streaming")
 
 
 # MAIN
@@ -21,15 +22,16 @@ def main():
 
 
     def scan_ldf(
+        ldf,
+        ldf_schema_dict,
         filter_model=None,
         columns=None,
         sort_model=None,
         ):
-        ldf = DATA_SOURCE
         if columns:
             ldf = ldf.select(columns)
         if filter_model:
-            expression_list = make_filter_expr_list(filter_model)
+            expression_list = make_filter_expr_list(filter_model, ldf_schema_dict)
             if expression_list:
                 filter_query = None
                 for expr in expression_list:
@@ -51,6 +53,8 @@ def main():
         logging.debug(nice_dict(conf))
     else:
         logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
+        # Declare 'conf' anyway cuz used for 'agg_in_tooltip' on occurrence, GT:
+        conf = {}
 
     # Add columns selected by user:
     if config_OK and 'col_selection' in conf.keys():
@@ -79,6 +83,26 @@ def main():
         # Also remove 'info_' prefix at the same time
         rename_dict = {c:c.replace('.', '_').replace('info_', '').replace('format_', '') for c in original_colnames}
         DATA_SOURCE = DATA_SOURCE.rename(rename_dict)
+        # Create 'chr-pos-ref-alt' col:
+        DATA_SOURCE = DATA_SOURCE.with_columns(
+            pl.concat_str(
+                [
+                    pl.col('chromosome'),
+                    pl.col('position').cast(str),
+                    pl.col('reference'),
+                    pl.col('alternate').list.join(separator=""),
+                ],
+                separator="-",
+            ).alias("CHROMPOSREFALT")
+        )
+        # Compute AB col (VAF):
+        for gt_col in GT_cols:
+            ad_colname = gt_col.replace('_GT', '_AD')
+            dp_colname = gt_col.replace('_GT', '_DP')
+            ab_colname = gt_col.replace('_GT', '_AB')
+            DATA_SOURCE = DATA_SOURCE.with_columns(
+                (pl.col(ad_colname).list[1]/pl.col(dp_colname)).alias(ab_colname)
+            )
         # Collect new renamed schema:
         full_schema = DATA_SOURCE.collect_schema()
         # List of INFO cols (with their new names):
@@ -98,19 +122,6 @@ def main():
         AD_cols = [ f"{s}_AD" for s in args.input ]
         DP_cols = [ f"{s}_DP" for s in args.input ]
         GQ_cols = [ f"{s}_GQ" for s in args.input ]
-        dict_gt = {"1":"0/1", "2":"1/1"}
-        for gt_col in GT_cols:
-            DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.col(gt_col).cast(str).replace(dict_gt)
-            )
-            DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.col(gt_col).fill_null("0/0")
-            )
-            # Convert to 'List(str)':
-            # ENH: Not very efficient to concat_list for later str.join('')
-            DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.concat_list([pl.col(gt_col)])
-            )
 
 
     # FROM HERE: should be independent of input type (lake or single pq)
@@ -119,29 +130,18 @@ def main():
         [print(col) for col in all_ann_cols]
         exit()
 
-    # Create 'chr-pos-ref-alt' col:
-    DATA_SOURCE = DATA_SOURCE.with_columns(
-        pl.concat_list([
-            pl.col('chromosome') + '-',
-            pl.col('position').cast(str) + '-',
-            pl.col('reference') + '-',
-            pl.col('alternate'),
-        ]).alias("#CHROMPOSREFALT")
-    )
-
-    # Create 'sample_AB' (VAF) cols:
+    # Get 'sample_AB' (VAF) col_names:
     AB_cols = []
-    for a_ad in AD_cols:
-        ab_colname = a_ad.replace('_AD', '_AB')
-        dp_colname = a_ad.replace('_AD', '_DP')
-        DATA_SOURCE = DATA_SOURCE.with_columns(
-            (pl.col(a_ad).list[1]/pl.col(dp_colname)).alias(ab_colname)
-        )
+    for a_gt in GT_cols:
+        ab_colname = a_gt.replace('_GT', '_AB')
+        dp_colname = a_gt.replace('_GT', '_DP')
         AB_cols.append(ab_colname)
 
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
-    wanted_cols = ["#CHROMPOSREFALT"]
+    wanted_cols = ["CHROMPOSREFALT"]
+    #wanted_cols += ['id']  # DEBUG only
+
     if args.input:
         wanted_cols += ["occurrence", "found_in"]
     wanted_cols += GT_cols
@@ -163,25 +163,24 @@ def main():
             # First join list(str) -> str, then cast to int
             DATA_SOURCE = DATA_SOURCE.with_columns(
                 pl.col(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
-                ).sort(by=conf['sort'][0], descending=conf['sort'][1]
-                ).select(wanted_cols)
+                ).sort(by=conf['sort'][0], descending=conf['sort'][1])
         else: # just sort
             DATA_SOURCE = DATA_SOURCE.with_columns(
-                ).sort(by=conf['sort'][0], descending=conf['sort'][1]
-                ).select(wanted_cols)
-
-    else:
-        DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
+                ).sort(by=conf['sort'][0], descending=conf['sort'][1])
 
     # Collect schema of final lf:
     final_schema = DATA_SOURCE.collect_schema()
+    # MEMO: Bellow dtypes are not really 'pl.dtypes'
+    #       But rather 'str' eval of 'pl.dtypes'
+    #       -> Should be OK anyway ?
     dict_schema = {k:str(final_schema[k]) for k in final_schema}
     logger.debug(nice_dict(dict_schema))
 
     # Bellow is a kind of assert (FAIL if selected wrong cols):
-    logger.info("Show first 10 rows of data:")
+    start_head = perf_counter()
     head_of_data = DATA_SOURCE.head().collect()
     logger.info(head_of_data)
+    logger.info(f"Showed first 10 rows of data (in {perf_counter()-start_head} seconds)")
 
     # Add hyperlink to 'chr-pos-ref-alt' col:
     # ENH: Use MobiDetails instead (API key required to query variant)
@@ -214,8 +213,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
     # Render link in 'chr-pos-ref-alt' col:
     # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
-    pre_columnDefs["#CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
-    pre_columnDefs["#CHROMPOSREFALT"]["width"] = 100
+    pre_columnDefs["CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
+    pre_columnDefs["CHROMPOSREFALT"]["width"] = 100
 
     # Change filterType of 'sort' column:
     if config_OK and "sort" in conf.keys():
@@ -235,10 +234,18 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         pre_columnDefs["occurrence"]["width"] = 100
         conf["agg_in_tooltip"]["occurrence"] = ["found_in"]
 
+    # Change filterType of 'id' column (if defined):
+    if 'id' in pre_columnDefs.keys():
+        pre_columnDefs["id"]["filter"] = "agNumberColumnFilter"
+
     # Add tooltips:
     # First add 'FORMAT' cols
     if len(GT_cols) > 1:
-        conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
+        if "agg_in_tooltip" not in conf.keys():
+            conf["agg_in_tooltip"] = {GT_cols[0]:format_to_tooltip(GT_cols)}
+        else:
+            conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
+
     if len(GT_cols) > 1 or (config_OK and "agg_in_tooltip" in conf.keys()):
         to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
 
@@ -280,7 +287,9 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     "rowHeight": 42,
                     # The number of rows rendered outside the viewable area the grid renders.
                     # Default=10
-                    "rowBuffer": 50,
+                    "rowBuffer": 100,
+                    # Number of rows sent by server (default=100)
+                    "cacheBlockSize": 50000,
                     # How many blocks to keep in the store. Default is no limit, so every requested block is kept.
                     "maxBlocksInCache": 1,
                     "rowSelection": {'mode': 'multiRow'},
@@ -304,19 +313,25 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     def infinite_scroll(request, columnDefs):
         if request is None:
             return no_update
-        columns = [col["field"] for col in columnDefs]
-        ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
+        ldf = scan_ldf(
+            DATA_SOURCE,
+            dict_schema,
+            filter_model=request["filterModel"],
+            columns=wanted_cols
+        )
+        start_call = perf_counter()
         partial = ldf[request["startRow"] : request["endRow"]].collect()
         dict_data = {
             "rowData": partial.to_dicts(),
         }
         dict_data["rowCount"] = total_rows
         rows_count = partial.shape[0]
-        if rows_count == 0:
-            # FIXME: Bellow stops scrolling when consumed all filtered rows
-            #dict_data["rowCount"] = 0
-            pass
-        logger.debug(f"Nb rows after filtering: {rows_count}")
+        if request["filterModel"] and rows_count == 0:
+            # MEMO: Does NOT set 'rowCount' in other context
+            #       Otherwise it stops scrolling when end reached
+            dict_data["rowCount"] = 0
+        logger.debug(f"Nb rows after filtering: {rows_count} (in {perf_counter()-start_call} seconds)")
+        logger.debug(f"Estimated dataFrame size: {partial.estimated_size(unit='mb')} MB")
         return dict_data, request["filterModel"]
 
     app.run(debug=False)
