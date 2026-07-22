@@ -11,7 +11,7 @@ from .styling import colorize_GT, aggKey_to_func, format_to_tooltip
 from .utils import parse_args, nice_dict
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
-#pl.Config.set_engine_affinity("streaming")
+pl.Config.set_engine_affinity("streaming")
 
 
 # MAIN
