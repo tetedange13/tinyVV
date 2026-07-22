@@ -37,10 +37,11 @@ def join_gt_frames(LAKE, samples_list, cols_list=None):
         FROM {samples_list[0]}
         {join_gt_expr}
     """
+
     print(query_join)
-    joint_lf = ctx.execute(query_join)
-    #joint_lf.sink_parquet("joint_gt.parquet")  # DEBUG
-    return joint_lf
+    joint_gt = ctx.execute(query_join)
+    #joint_gt.select(['id']+[ f"{s}_GT" for s in samples_list]).sink_parquet("joint_gt.parquet")  # DEBUG
+    return joint_gt
 
 
 def lake_data(LAKE, samples_list, cols_list=None):
