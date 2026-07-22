@@ -102,10 +102,6 @@ def main():
         AD_cols = [ f"{s}_AD" for s in args.input ]
         DP_cols = [ f"{s}_DP" for s in args.input ]
         GQ_cols = [ f"{s}_GQ" for s in args.input ]
-        for gt_col in GT_cols:
-            DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.col(gt_col).fill_null("0/0")
-            )
 
 
     # FROM HERE: should be independent of input type (lake or single pq)

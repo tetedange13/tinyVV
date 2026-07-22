@@ -116,6 +116,7 @@ python -m tinyvv \
 - When filtering, infinite scroll continues even if nothing to show (empty rows)
 - Cannot filter on 'AD' column (crash app due to type incompatibility)
 - [parquets_lake] Empty values in ANN are shown as '.' (vs null in "single_pq" input)
+- [parquets_lake] Genotypes "0/0" are shown as "blank" but can be filtered as such (not converted for perf considerations)
 
 <br>
 
