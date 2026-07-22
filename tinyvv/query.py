@@ -9,7 +9,8 @@ def lake_schema(LAKE):
     return ann.rename(rename_dict).collect_schema()
 
 
-def lake_data(LAKE, samples_list, cols_list=None):
+def join_gt_frames(LAKE, samples_list, cols_list=None):
+
     # Build a list of 'genotypes' pq, with renamed cols for join:
     pqs_list = []
     for s in samples_list:
@@ -19,6 +20,9 @@ def lake_data(LAKE, samples_list, cols_list=None):
         pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
         pqs_list.append(pq_to_join)
 
+    all_parquets = { f"{samples_list[i]}":pq for i, pq in enumerate(pqs_list) }
+    ctx = pl.SQLContext(frames=all_parquets)
+
     # Full join on id:
     # MEMO: 'NATURAL' means 'join on common cols + coalesce'
     # WARN: Should I make sure 'id' is the only common col ???
@@ -26,7 +30,19 @@ def lake_data(LAKE, samples_list, cols_list=None):
 
     # WARN: 'concat diag' not doing a full join
     #joint_gt = pl.concat(pqs_list, how='diagonal')
-    all_parquets = { f"{samples_list[i]}":pq for i, pq in enumerate(pqs_list) }
+
+    query_join = f"""
+    SELECT *
+        FROM {samples_list[0]}
+        {join_gt_expr}
+    """
+    print(query_join)
+    return ctx.execute(query_join)
+
+
+def lake_data(LAKE, samples_list, cols_list=None):
+    # Add joint_gt:
+    all_parquets = {"joint_gt": join_gt_frames(LAKE, samples_list, cols_list)}
 
     # Add 'variants' for context passing:
     all_parquets["c"] = pl.scan_parquet(f'{LAKE}/occurrences/*.parquet')
@@ -51,12 +67,6 @@ def lake_data(LAKE, samples_list, cols_list=None):
         ann_cols = ','.join([a for a in all_parquets["ann"].collect_schema().names() if not a.endswith('id')])
 
     query_lf = f"""
-    WITH joint_gt AS (
-        SELECT *
-            FROM {samples_list[0]}
-            {join_gt_expr}
-    )
-
     SELECT
         joint_gt.id AS id,
         chr as chromosome,
