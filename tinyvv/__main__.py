@@ -161,15 +161,10 @@ def main():
             # First join list(str) -> str, then cast to int
             DATA_SOURCE = DATA_SOURCE.with_columns(
                 pl.col(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
-                ).sort(by=conf['sort'][0], descending=conf['sort'][1]
-                ).select(wanted_cols)
+                ).sort(by=conf['sort'][0], descending=conf['sort'][1])
         else: # just sort
             DATA_SOURCE = DATA_SOURCE.with_columns(
-                ).sort(by=conf['sort'][0], descending=conf['sort'][1]
-                ).select(wanted_cols)
-
-    else:
-        DATA_SOURCE = DATA_SOURCE.select(wanted_cols)
+                ).sort(by=conf['sort'][0], descending=conf['sort'][1])
 
     # Collect schema of final lf:
     final_schema = DATA_SOURCE.collect_schema()
@@ -309,11 +304,10 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     def infinite_scroll(request, columnDefs):
         if request is None:
             return no_update
-        columns = [col["field"] for col in columnDefs]
         ldf = scan_ldf(
             DATA_SOURCE,
             filter_model=request["filterModel"],
-            columns=columns
+            columns=wanted_cols
         )
         start_call = perf_counter()
         partial = ldf[request["startRow"] : request["endRow"]].collect()
