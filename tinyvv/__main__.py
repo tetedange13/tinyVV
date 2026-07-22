@@ -326,10 +326,10 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         }
         dict_data["rowCount"] = total_rows
         rows_count = partial.shape[0]
-        if rows_count == 0:
-            # FIXME: Bellow stops scrolling when consumed all filtered rows
-            #dict_data["rowCount"] = 0
-            pass
+        if request["filterModel"] and rows_count == 0:
+            # MEMO: Does NOT set 'rowCount' in other context
+            #       Otherwise it stops scrolling when end reached
+            dict_data["rowCount"] = 0
         logger.debug(f"Nb rows after filtering: {rows_count} (in {perf_counter()-start_call} seconds)")
         logger.debug(f"Estimated dataFrame size: {partial.estimated_size(unit='mb')} MB")
         return dict_data, request["filterModel"]
