@@ -1,6 +1,6 @@
 import polars as pl
 import sys
-#pl.Config.set_engine_affinity("streaming")
+pl.Config.set_engine_affinity("streaming")
 
 
 def lake_schema(LAKE):
@@ -118,7 +118,9 @@ if __name__ == "__main__":
     )
 
     # Collect and profile query:
-    partial, profile_df = sliced.profile(engine="streaming")
+    # WARN: '.profile()' works only with 'in-memory' engine
+    #       Cf: https://github.com/pola-rs/polars/issues/28274
+    partial, profile_df = sliced.profile(engine="in-memory")
     profile_df.with_columns([
     (pl.col("end") - pl.col("start")).alias("duration")
 ]).with_columns([
