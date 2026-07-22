@@ -94,7 +94,7 @@ def main():
                     pl.col('chromosome'),
                     pl.col('position').cast(str),
                     pl.col('reference'),
-                    pl.col('alternate'),
+                    pl.col('alternate').list.join(separator=""),
                 ],
                 separator="-",
             ).alias("#CHROMPOSREFALT")
@@ -234,7 +234,11 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     # Add tooltips:
     # First add 'FORMAT' cols
     if len(GT_cols) > 1:
-        conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
+        if "agg_in_tooltip" not in conf.keys():
+            conf["agg_in_tooltip"] = {GT_cols[0]:format_to_tooltip(GT_cols)}
+        else:
+            conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
+
     if len(GT_cols) > 1 or (config_OK and "agg_in_tooltip" in conf.keys()):
         to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
 
