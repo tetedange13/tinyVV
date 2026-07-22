@@ -1,4 +1,5 @@
 import polars as pl
+import sys
 #pl.Config.set_engine_affinity("streaming")
 
 
@@ -92,7 +93,10 @@ def lake_data(LAKE, samples_list, cols_list=None):
 
 
 if __name__ == "__main__":
-    sliced = lake_data("parquets_lake3/", ["HG001", "HG002", "HG003", "HG004"])[0:100]
+    LAKE = sys.argv[1]
+    samplesList = sys.argv[2]
+
+    sliced = lake_data(LAKE, samplesList.split(','))[0:100]
     print(sliced.explain(optimized=True))
     print(sliced.collect_schema())
 
