@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [pq_lake] Reduce number of callbacks when scrolling
 - Handle "no config" better
 - [pq_lake] Specify 'set_sorted(id)' in "count_occurr" was wrong
+- [pq_lake] Improve filtering and remove abusive 'List(str)->str' casts
 
 ### Changed
 
