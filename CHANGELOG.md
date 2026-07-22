@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
-## [0.6.2] - Unreleased
+## [0.7.0] - 2026-07-22
 
 ### Fixed
 
@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [pq_lake] Specify 'set_sorted(id)' in "count_occurr" was wrong
 - [pq_lake] Improve filtering and remove abusive 'List(str)->str' casts
 - [single_pq] Compute AB col too
+- Correctly show "no matching rows" when filtering returns nothing. But still empty rows after filtered rows
 
 ### Changed
 
