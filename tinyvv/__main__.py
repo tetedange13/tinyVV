@@ -22,11 +22,11 @@ def main():
 
 
     def scan_ldf(
+        ldf,
         filter_model=None,
         columns=None,
         sort_model=None,
         ):
-        ldf = DATA_SOURCE
         if columns:
             ldf = ldf.select(columns)
         if filter_model:
@@ -310,7 +310,11 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         if request is None:
             return no_update
         columns = [col["field"] for col in columnDefs]
-        ldf = scan_ldf(filter_model=request["filterModel"], columns=columns)
+        ldf = scan_ldf(
+            DATA_SOURCE,
+            filter_model=request["filterModel"],
+            columns=columns
+        )
         start_call = perf_counter()
         partial = ldf[request["startRow"] : request["endRow"]].collect()
         dict_data = {
