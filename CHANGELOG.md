@@ -37,6 +37,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reduce number of callbacks when scrolling
 - Handle "no config" better
+- [occurr] Specify 'set_sorted(id)' was wrong
+
+### Changed
+
+- Set collect_engine to "streaming". Known bug with "in-memory" engine in Polars v1.41 and above (https://github.com/pola-rs/polars/issues/28419). "streaming" engine is expected to be faster and become default in v1.43 anyway
+- [lake_build] Do not handle "annotations" anymore
+- [lake_build] Do not recompute "genotypes/samples/sample.parquet" if exist (easier to increment lake). Other parquets are always recomputed (occurr, uniq_variants)
+
+### Added
+
+- Documentation for lake building
 
 <br>
 
@@ -50,7 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - [pq_lake] Do more transformations at lake building (-> once instead of at every callback)
-
 
 <br>
 
