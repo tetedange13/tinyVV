@@ -23,6 +23,7 @@ def main():
 
     def scan_ldf(
         ldf,
+        ldf_schema_dict,
         filter_model=None,
         columns=None,
         sort_model=None,
@@ -30,7 +31,7 @@ def main():
         if columns:
             ldf = ldf.select(columns)
         if filter_model:
-            expression_list = make_filter_expr_list(filter_model)
+            expression_list = make_filter_expr_list(filter_model, ldf_schema_dict)
             if expression_list:
                 filter_query = None
                 for expr in expression_list:
@@ -168,6 +169,9 @@ def main():
 
     # Collect schema of final lf:
     final_schema = DATA_SOURCE.collect_schema()
+    # MEMO: Bellow dtypes are not really 'pl.dtypes'
+    #       But rather 'str' eval of 'pl.dtypes'
+    #       -> Should be OK anyway ?
     dict_schema = {k:str(final_schema[k]) for k in final_schema}
     logger.debug(nice_dict(dict_schema))
 
@@ -306,6 +310,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             return no_update
         ldf = scan_ldf(
             DATA_SOURCE,
+            dict_schema,
             filter_model=request["filterModel"],
             columns=wanted_cols
         )

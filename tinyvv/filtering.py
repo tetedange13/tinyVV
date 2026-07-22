@@ -2,7 +2,6 @@ import polars as pl
 
 
 def convert_list_str(colname):
-    # ENH: Use dtype from schema ???
     """
     Most text-based columns are typed 'List(str)' by variant-planer/vcf2parquet
     Convert them back to string avoid dtype incompatibily error when filtering
@@ -16,14 +15,14 @@ def convert_list_str(colname):
             )
 
 
-def parse_column_filter(filter_obj, col_name):
+def parse_column_filter(filter_obj, col_name, lf_schema_dict):
     """Build a polars filter expression based on the filter object"""
 
-    if filter_obj["filterType"] == "text":
-        # WARN: Bellow assume all 'text' cols are of pl.dtype == 'list(str):
+    converted_col = pl.col(col_name)
+    # Convert 'text' col if pl.dtype == 'list(str):
+    if filter_obj["filterType"] == "text" and lf_schema_dict[col_name] == "List(String)":
         converted_col = convert_list_str(col_name)
-    else:
-        converted_col = pl.col(col_name)
+        print("DEBUG:filtering:Converted dtype from List(str) to str:", col_name)  # DEBUG
 
     if filter_obj["filterType"] == "set":
         expr = None
@@ -114,8 +113,8 @@ def parse_column_filter(filter_obj, col_name):
     return expr
 
 
-def make_filter_expr_list(filt_model):
+def make_filter_expr_list(filt_model, lf_schema_dict):
     expr_list = []
     for a_col in filt_model:
-       expr_list.append(parse_column_filter(filt_model[a_col], a_col))
+       expr_list.append(parse_column_filter(filt_model[a_col], a_col, lf_schema_dict))
     return expr_list
