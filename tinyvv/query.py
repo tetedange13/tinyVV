@@ -75,10 +75,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
     query_lf = f"""
     SELECT
         joint_gt.id,
-        chr as chromosome,
-        pos AS position,
-        ref AS reference,
-        alt AS alternate,
+        CHROMPOSREFALT,
         occurrence,
         found_in,
         {gt_cols},

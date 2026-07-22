@@ -87,6 +87,18 @@ def main():
         full_schema = DATA_SOURCE.collect_schema()
         # List of INFO cols (with their new names):
         all_ann_cols = [c.replace('.', '_').replace('info_', '') for c in original_colnames if c.startswith('info_')]
+        # Create 'chr-pos-ref-alt' col:
+        DATA_SOURCE = DATA_SOURCE.with_columns(
+            pl.concat_str(
+                [
+                    pl.col('chromosome'),
+                    pl.col('position').cast(str),
+                    pl.col('reference'),
+                    pl.col('alternate'),
+                ],
+                separator="-",
+            ).alias("#CHROMPOSREFALT")
+        )
 
     elif args.input:  # Lake input
         # WARN: Bellow 'full_schema' only contains ANN cols...
@@ -110,20 +122,7 @@ def main():
         [print(col) for col in all_ann_cols]
         exit()
 
-    # Create 'chr-pos-ref-alt' col:
-    DATA_SOURCE = DATA_SOURCE.with_columns(
-        pl.concat_str(
-            [
-                pl.col('chromosome'),
-                pl.col('position').cast(str),
-                pl.col('reference'),
-                pl.col('alternate'),
-            ],
-            separator="-",
-        ).alias("#CHROMPOSREFALT")
-    )
-
-    # Create 'sample_AB' (VAF) cols:
+    # Get 'sample_AB' (VAF) col_names:
     AB_cols = []
     for a_ad in AD_cols:
         ab_colname = a_ad.replace('_AD', '_AB')
@@ -132,7 +131,7 @@ def main():
 
     # wanted_cols:
     # Also add all 'format' ones ? (eg: DP)
-    wanted_cols = ["#CHROMPOSREFALT"]
+    wanted_cols = ["CHROMPOSREFALT"]
     #wanted_cols += ['id']  # DEBUG only
 
     if args.input:
@@ -141,7 +140,8 @@ def main():
     wanted_cols += GQ_cols
     wanted_cols += DP_cols
     wanted_cols += AD_cols
-    wanted_cols += AB_cols
+    if args.input:
+        wanted_cols += AB_cols
 
     if config_OK and 'col_selection' in conf.keys():
         wanted_cols += selected_cols
@@ -206,8 +206,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
     # Render link in 'chr-pos-ref-alt' col:
     # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
-    pre_columnDefs["#CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
-    pre_columnDefs["#CHROMPOSREFALT"]["width"] = 100
+    pre_columnDefs["CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
+    pre_columnDefs["CHROMPOSREFALT"]["width"] = 100
 
     # Change filterType of 'sort' column:
     if config_OK and "sort" in conf.keys():
