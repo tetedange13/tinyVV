@@ -118,7 +118,7 @@ if __name__ == "__main__":
     )
 
     # Collect and profile query:
-    partial, profile_df = sliced.profile()
+    partial, profile_df = sliced.profile(engine="streaming")
     profile_df.with_columns([
     (pl.col("end") - pl.col("start")).alias("duration")
 ]).with_columns([
