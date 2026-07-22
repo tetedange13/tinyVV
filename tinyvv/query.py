@@ -17,6 +17,7 @@ def join_gt_frames(LAKE, samples_list, cols_list=None):
     for s in samples_list:
         pq_path = f"{LAKE}/genotypes/samples/{s}.parquet"
         selected_cols = ['id', 'gt', 'gq', 'ad', 'dp', 'ab']
+        #selected_cols = ['id', 'gt', 'gq']  # DEBUG
         rename_dict = { c:f"{s}_{c.upper()}" for c in selected_cols if c != 'id' }
         pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
         pqs_list.append(pq_to_join)
@@ -40,7 +41,8 @@ def join_gt_frames(LAKE, samples_list, cols_list=None):
 
     print(query_join)
     joint_gt = ctx.execute(query_join)
-    #joint_gt.select(['id']+[ f"{s}_GT" for s in samples_list]).sink_parquet("joint_gt.parquet")  # DEBUG
+    #joint_gt.sink_parquet("joint_gt.parquet")  # DEBUG
+
     return joint_gt
 
 
@@ -72,7 +74,7 @@ def lake_data(LAKE, samples_list, cols_list=None):
 
     query_lf = f"""
     SELECT
-        joint_gt.id AS id,
+        joint_gt.id,
         chr as chromosome,
         pos AS position,
         ref AS reference,
