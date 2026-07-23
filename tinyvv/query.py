@@ -100,8 +100,19 @@ if __name__ == "__main__":
     LAKE = sys.argv[1]
     samplesList = sys.argv[2]
     firstSample = samplesList.split(',')[0]
+    GT_cols = [f"{s}_GT" for s in samplesList.split(',')]
 
-    sliced = lake_data(LAKE, samplesList.split(','))
+    full_data = lake_data(LAKE, samplesList.split(','))
+    if len(sys.argv) == 4:
+        full_data.select(
+            ['CHROMPOSREFALT']+GT_cols
+        ).sink_csv(
+            sys.argv[3],
+            include_header=False,
+            separator="\t",
+            null_value="0/0",
+        )
+    sliced = full_data
     # Filter
     #sliced = sliced.filter(pl.col(f"{firstSample}_GT")=="0/1")
     # Filter2: harder cuz all joins have to happen first
