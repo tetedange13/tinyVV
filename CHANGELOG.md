@@ -31,6 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [0.7.1] - Unreleased
+
+### Added
+
+- First test on join correctness
+
+<br>
+
 ## [0.7.0] - 2026-07-22
 
 ### Fixed
