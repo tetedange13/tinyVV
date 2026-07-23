@@ -105,7 +105,7 @@ if __name__ == "__main__":
     # Filter
     sliced = sliced.filter(pl.col(f"{firstSample}_GT")=="0/1")
     # Slice
-    sliced = sliced[0:100]
+    sliced = sliced[0:50000]
     print(sliced.explain(optimized=True))
     print(sliced.collect_schema())
 
