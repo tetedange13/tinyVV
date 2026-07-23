@@ -20,7 +20,7 @@ def join_gt_frames(LAKE, samples_list, cols_list=None):
         #selected_cols = ['id', 'gt', 'gq']  # DEBUG
         rename_dict = { c:f"{s}_{c.upper()}" for c in selected_cols if c != 'id' }
         pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
-        pqs_list.append(pq_to_join)
+        pqs_list.append(pq_to_join.set_sorted('id'))
 
     all_parquets = { f"{samples_list[i]}":pq for i, pq in enumerate(pqs_list) }
     ctx = pl.SQLContext(frames=all_parquets)
