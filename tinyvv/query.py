@@ -99,8 +99,13 @@ def lake_data(LAKE, samples_list, cols_list=None):
 if __name__ == "__main__":
     LAKE = sys.argv[1]
     samplesList = sys.argv[2]
+    firstSample = samplesList.split(',')[0]
 
-    sliced = lake_data(LAKE, samplesList.split(','))[0:100]
+    sliced = lake_data(LAKE, samplesList.split(','))
+    # Filter
+    sliced = sliced.filter(pl.col(f"{firstSample}_GT")=="0/1")
+    # Slice
+    sliced = sliced[0:100]
     print(sliced.explain(optimized=True))
     print(sliced.collect_schema())
 
@@ -113,6 +118,10 @@ if __name__ == "__main__":
         show=False,
         output_path="plan.png",
     )
+
+    # Simply collect:
+    print(sliced.collect())
+    exit()
 
     # Collect and profile query:
     # WARN: '.profile()' works only with 'in-memory' engine
