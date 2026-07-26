@@ -7,7 +7,7 @@ import yaml
 from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
-from .styling import colorize_GT, aggKey_to_func, format_to_tooltip
+from .styling import style_columns
 from .utils import parse_args, nice_dict
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
@@ -200,65 +200,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         compon_file.write(custom_compon.replace('BUILD', args.build))
 
 
-    # Set colDefs properties
-    # MEMO: Ag-grid expects a list of {field:i}
-    #       But for now simpler to use a dict with colname as key
-    pre_columnDefs={i:{"field": i} for i in wanted_cols}
-
-    # Color GT cols:
-    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
-    for gt_col in GT_cols:
-        pre_columnDefs[gt_col]["cellStyle"] = colorize_GT()
-        pre_columnDefs[gt_col]["width"] = 150
-
-    # Render link in 'chr-pos-ref-alt' col:
-    # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
-    pre_columnDefs["CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
-    pre_columnDefs["CHROMPOSREFALT"]["width"] = 100
-
-    # Change filterType of 'sort' column:
-    if config_OK and "sort" in conf.keys():
-        pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
-
-    # Change filterType of relevant 'FORMAT' column:
-    nb_format_cols = GQ_cols + DP_cols + AB_cols
-    for fmt_col in nb_format_cols:
-        pre_columnDefs[fmt_col]["filter"] = "agNumberColumnFilter"
-    # Disable filtering on 'AD' cols (dtype incompat):
-    for fmt_col in AD_cols:
-        pre_columnDefs[fmt_col]["filter"] = False
-
-    # Change filterType of 'occurrence' column (if defined):
-    if 'occurrence' in pre_columnDefs.keys():
-        pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
-        pre_columnDefs["occurrence"]["width"] = 100
-        conf["agg_in_tooltip"]["occurrence"] = ["found_in"]
-
-    # Change filterType of 'id' column (if defined):
-    if 'id' in pre_columnDefs.keys():
-        pre_columnDefs["id"]["filter"] = "agNumberColumnFilter"
-
-    # Add tooltips:
-    # First add 'FORMAT' cols
-    if len(GT_cols) > 1:
-        if "agg_in_tooltip" not in conf.keys():
-            conf["agg_in_tooltip"] = {GT_cols[0]:format_to_tooltip(GT_cols)}
-        else:
-            conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
-
-    if len(GT_cols) > 1 or (config_OK and "agg_in_tooltip" in conf.keys()):
-        to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
-
-        for a_col in conf["agg_in_tooltip"].keys():
-            pre_columnDefs[a_col]["tooltipField"] = a_col  # Mandatory
-            ## aggKey_to_func() writes a JS func for each col where tooltip is added:
-            pre_columnDefs[a_col]["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col)
-
-        # Hide columns whose data are in tooltip:
-        for hide_col in to_hide:
-            pre_columnDefs[hide_col]["hide"] = True
-
-        logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
+    pre_columnDefs = style_columns(config_OK, conf, wanted_cols)
 
     logger.debug(nice_dict(list(pre_columnDefs.values())))
 
