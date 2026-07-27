@@ -33,6 +33,7 @@ def main():
             ldf = ldf.select(columns)
         if filter_model:
             filter_query = make_filter_expr_list(filter_model, col_def_dict, ldf_schema_dict)
+            print(f"filter_query: {filter_query}")
             ldf = ldf.filter(filter_query)
         return ldf
 
@@ -297,6 +298,16 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
 
     @app.callback(
+        Output("filter-list", "children", allow_duplicate=True),
+        Output("stored-filters", "data", allow_duplicate=True),
+        Input("reset-filters", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def reset_filters(n_clicks):
+        # FIXME: reset_filters should update grid and remove applied filters ???
+        return html.Div(id="filter-list"), []
+
+    @app.callback(
         Output("filter-list", "children"),
         Output("stored-filters", "data"),
         Input("add-filter", "n_clicks"),
@@ -338,9 +349,6 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     prevent_initial_call=True,
     )
     def infinite_scroll(request, n_clicks, filters):
-        print(f"request: {request}")
-        print(f"n_clicks: {n_clicks}")
-        print(f"filters: {filters}")
         if request is None:
             return no_update
         ldf = scan_ldf(
@@ -364,16 +372,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         logger.debug(f"Estimated dataFrame size: {partial.estimated_size(unit='mb')} MB")
         return dict_data
 
-    @app.callback(
-        Output("stored-filters", "data", allow_duplicate=True),
-        Input("reset-filters", "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def reset_filters(n_clicks):
-        return []
 
     app.run(debug=False)
-
 
 if __name__ == "__main__":
     main()
