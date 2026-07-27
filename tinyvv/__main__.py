@@ -1,6 +1,6 @@
 import logging
 import dash_ag_grid as dag
-from dash import Dash, Input, Output, dcc, html, no_update, callback
+from dash import Dash, Input, Output, State, dcc, html, no_update, callback
 import polars as pl
 import os.path as osp
 import yaml
@@ -31,15 +31,8 @@ def main():
         if columns:
             ldf = ldf.select(columns)
         if filter_model:
-            expression_list = make_filter_expr_list(filter_model, ldf_schema_dict)
-            if expression_list:
-                filter_query = None
-                for expr in expression_list:
-                    if filter_query is None:
-                        filter_query = expr
-                    else:
-                        filter_query &= expr
-                ldf = ldf.filter(filter_query)
+            filter_query = make_filter_expr_list(filter_model, ldf_schema_dict)
+            ldf = ldf.filter(filter_query)
         return ldf
 
     # Parse arguments:
@@ -212,11 +205,66 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
     app = Dash()
 
-    app.layout = html.Div(
-        [
-            dcc.Markdown("Infinite scroll with selectable rows"),
+    app.layout = html.Div([
+            # Zone de définition des filtres
+            html.Div(id="filter-builder", children=[
+                html.Div([
+                    # Ligne 1 : Colonne, Opérateur, Valeur
+                    dcc.Dropdown(
+                        id="filter-column",
+                        options=[{"label": col, "value": col} for col in wanted_cols],
+                        placeholder="Colonne",
+                        style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    dcc.Dropdown(
+                        id="filter-operator",
+                        options=[
+                            {"label": "Contains", "value": "contains"},
+                            {"label": "Does not contain", "value": "notContains"},
+                            {"label": "Equals", "value": "equals"},
+                            {"label": "Does not equal", "value": "notEqual"},
+                            {"label": "Greater than", "value": "greaterThan"},
+                            {"label": "Greater than or equal to", "value": "greaterThanOrEqual"},
+                            {"label": "Less than", "value": "lessThan"},
+                            {"label": "Less than or equal to", "value": "lessThanOrEqual"},
+                            {"label": "Starts with", "value": "startsWith"},
+                            {"label": "Ends with", "value": "endsWith"},
+                            {"label": "Blank", "value": "isEmpty"},
+                            {"label": "Not blank", "value": "isNotEmpty"},
+                        ],
+                        placeholder="Opérateur",
+                        style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    dcc.Input(
+                        id="filter-value",
+                        type="text",
+                        placeholder="Valeur",
+                        style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    # Ligne 2 : ET/OU
+                    dcc.Dropdown(
+                        id="filter-logic",
+                        options=[
+                            {"label": "ET", "value": "and"},
+                            {"label": "OU", "value": "or"},
+                        ],
+                        value="and",
+                        style={"width": "100px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    html.Button("Ajouter", id="add-filter", n_clicks=0),
+                ], style={"marginBottom": "20px"}),
+                # Liste des filtres ajoutés
+                html.Div(id="filter-list"),
+            ]),
+
+            # Boutons
+            html.Div([
+                html.Button("Appliquer", id="apply-filters", n_clicks=0, style={"marginRight": "10px"}),
+                html.Button("Réinitialiser", id="reset-filters", n_clicks=0),
+            ], style={"marginBottom": "20px"}),
+
             dag.AgGrid(
-                id="infinite-grid",
+                id="grid",
                 style={"height": 600, "width": "100%"},
                 columnDefs=list(pre_columnDefs.values()),
                 defaultColDef={
@@ -240,25 +288,64 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     "skipHeaderOnAutoSize": True,
                 },
             ),
-            dcc.Store(id="filter-model"),
+            dcc.Store(id="stored-filters", data=[]),
             html.Div(id="infinite-output"),
         ],
         style={"margin": 20},
     )
 
+
     @app.callback(
-    Output("infinite-grid", "getRowsResponse"),
-    Output("filter-model", "data"),
-    Input("infinite-grid", "getRowsRequest"),
-    Input("infinite-grid", "columnDefs")
+        Output("filter-list", "children"),
+        Output("stored-filters", "data"),
+        Input("add-filter", "n_clicks"),
+        State("filter-column", "value"),
+        State("filter-operator", "value"),
+        State("filter-value", "value"),
+        State("filter-logic", "value"),
+        State("stored-filters", "data"),
+        prevent_initial_call=True,
     )
-    def infinite_scroll(request, columnDefs):
+    def add_filter(n_clicks, col, op, val, logic, stored_filters):
+        if not col or not op or (val is None and op not in ["isEmpty", "isNotEmpty"]):
+            return html.Div("Veuillez remplir tous les champs.", style={"color": "red"}), stored_filters
+
+        new_filter = {"column": col, "operator": op, "value": val, "logic": logic}
+        stored_filters = stored_filters or []
+        stored_filters.append(new_filter)
+
+        filter_items = [
+            html.Div([
+                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
+                html.Span(f" {f['logic'].upper()} ", style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+            for f in stored_filters
+        ]
+        # Le dernier filtre n'a pas de "ET/OU" après
+        if filter_items:
+            filter_items[-1] = html.Div([
+                html.Span(f"{stored_filters[-1]['column']} {stored_filters[-1]['operator']} {stored_filters[-1]['value']}"),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+
+        return html.Div(filter_items), stored_filters
+
+    @app.callback(
+    Output("grid", "getRowsResponse"),
+    Input("grid", "getRowsRequest"),
+    Input("apply-filters", "n_clicks"),
+    State("stored-filters", "data"),
+    prevent_initial_call=True,
+    )
+    def infinite_scroll(request, n_clicks, filters):
+        print(f"request: {request}")
+        print(f"n_clicks: {n_clicks}")
+        print(f"filters: {filters}")
         if request is None:
             return no_update
         ldf = scan_ldf(
             DATA_SOURCE,
             dict_schema,
-            filter_model=request["filterModel"],
+            filter_model=filters,
             columns=wanted_cols
         )
         start_call = perf_counter()
@@ -274,7 +361,15 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             dict_data["rowCount"] = 0
         logger.debug(f"Nb rows after filtering: {rows_count} (in {perf_counter()-start_call} seconds)")
         logger.debug(f"Estimated dataFrame size: {partial.estimated_size(unit='mb')} MB")
-        return dict_data, request["filterModel"]
+        return dict_data
+
+    @app.callback(
+        Output("stored-filters", "data", allow_duplicate=True),
+        Input("reset-filters", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def reset_filters(n_clicks):
+        return []
 
     app.run(debug=False)
 
