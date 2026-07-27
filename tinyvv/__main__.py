@@ -25,13 +25,14 @@ def main():
         ldf,
         ldf_schema_dict,
         filter_model=None,
-        columns=None,
+        col_def_dict=None,
         sort_model=None,
         ):
+        columns = list(col_def_dict.keys())
         if columns:
             ldf = ldf.select(columns)
         if filter_model:
-            filter_query = make_filter_expr_list(filter_model, ldf_schema_dict)
+            filter_query = make_filter_expr_list(filter_model, col_def_dict, ldf_schema_dict)
             ldf = ldf.filter(filter_query)
         return ldf
 
@@ -346,7 +347,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             DATA_SOURCE,
             dict_schema,
             filter_model=filters,
-            columns=wanted_cols
+            col_def_dict=pre_columnDefs
         )
         start_call = perf_counter()
         partial = ldf[request["startRow"] : request["endRow"]].collect()

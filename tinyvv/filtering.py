@@ -113,7 +113,7 @@ def parse_column_filter(filter_obj, col_name, lf_schema_dict):
     return expr
 
 
-def make_filter_expr_list(filt_model, lf_schema_dict):
+def make_filter_expr_list(filt_model, col_def_dict, lf_schema_dict):
     expr_list = []  # init Polars expression
     logic_list = []
     filt_obj = {}
@@ -121,10 +121,12 @@ def make_filter_expr_list(filt_model, lf_schema_dict):
     for a_filt in filt_model:
        # mimic object structure for column-wise filtering
        filt_obj = {
-          "filterType":"text",
-          "type":a_filt['operator'],
+          "type":a_filt["operator"],
           "filter":a_filt["value"]
        }
+       filt_obj["filterType"] = "text"
+       if "filter" in col_def_dict[a_filt["column"]].keys() and col_def_dict[a_filt["column"]]["filter"] == "agNumberColumnFilter":
+          filt_obj["filterType"] = "number"
        # Cannot init a polars expr -> have to put in a list
        logic_list.append(a_filt['logic'])
        expr_list.append(
