@@ -214,7 +214,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     dcc.Dropdown(
                         id="filter-column",
                         options=[{"label": col, "value": col} for col in wanted_cols],
-                        placeholder="Colonne",
+                        placeholder="Columns",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
                     ),
                     dcc.Dropdown(
@@ -233,26 +233,26 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                             {"label": "Blank", "value": "isEmpty"},
                             {"label": "Not blank", "value": "isNotEmpty"},
                         ],
-                        placeholder="Opérateur",
+                        placeholder="Operator",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
                     ),
                     dcc.Input(
                         id="filter-value",
                         type="text",
-                        placeholder="Valeur",
+                        placeholder="Value",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
                     ),
                     # Ligne 2 : ET/OU
                     dcc.Dropdown(
                         id="filter-logic",
                         options=[
-                            {"label": "ET", "value": "and"},
-                            {"label": "OU", "value": "or"},
+                            {"label": "AND", "value": "and"},
+                            {"label": "OR", "value": "or"},
                         ],
                         value="and",
                         style={"width": "100px", "display": "inline-block", "marginRight": "10px"}
                     ),
-                    html.Button("Ajouter", id="add-filter", n_clicks=0),
+                    html.Button("ADD filter", id="add-filter", n_clicks=0),
                 ], style={"marginBottom": "20px"}),
                 # Liste des filtres ajoutés
                 html.Div(id="filter-list"),
@@ -260,8 +260,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
             # Boutons
             html.Div([
-                html.Button("Appliquer", id="apply-filters", n_clicks=0, style={"marginRight": "10px"}),
-                html.Button("Réinitialiser", id="reset-filters", n_clicks=0),
+                html.Button("APPLY filters", id="apply-filters", n_clicks=0, style={"marginRight": "10px"}),
+                html.Button("RESET filters", id="reset-filters", n_clicks=0),
             ], style={"marginBottom": "20px"}),
 
             dag.AgGrid(
@@ -270,7 +270,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                 columnDefs=list(pre_columnDefs.values()),
                 defaultColDef={
                     "sortable": False,
-                    "filter": True,
+                    "filter": False,
                 },
                 rowModelType="infinite",
                 dashGridOptions={
