@@ -116,5 +116,5 @@ def parse_column_filter(filter_obj, col_name, lf_schema_dict):
 def make_filter_expr_list(filt_model, lf_schema_dict):
     expr_list = []
     for a_col in filt_model:
-       expr_list.append(parse_column_filter(filt_model[a_col], a_col, lf_schema_dict))
+        expr_list.append(parse_column_filter(filt_model[a_col], a_col, lf_schema_dict))
     return expr_list
