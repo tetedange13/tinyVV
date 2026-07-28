@@ -27,7 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with OR logic too)
+- New conf section "treat_as_number", to cast some columns as number (eg: GnomAD_freq)
+
+<br>
+
+## [0.8.0] - 2026-07-28
+
+### Changed
+
+- Filtering now made through an equivalent of DataTables' [searchBuiler](https://datatables.net/extensions/searchbuilder/) (with AND/OR logic too)
+
+### Added
+
+- First test on join correctness
 
 <br>
 

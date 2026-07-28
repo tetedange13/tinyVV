@@ -113,8 +113,37 @@ def parse_column_filter(filter_obj, col_name, lf_schema_dict):
     return expr
 
 
-def make_filter_expr_list(filt_model, lf_schema_dict):
-    expr_list = []
-    for a_col in filt_model:
-       expr_list.append(parse_column_filter(filt_model[a_col], a_col, lf_schema_dict))
-    return expr_list
+def make_filter_expr_list(filt_model, col_def_dict, lf_schema_dict):
+    expr_list = []  # init Polars expression
+    logic_list = []
+    filt_obj = {}
+    #dict_logic = 
+    for a_filt in filt_model:
+        # mimic object structure for column-wise filtering
+        filt_obj = {"type":a_filt["operator"]}
+        filt_obj["filterType"] = "text"
+        filt_obj["filter"] = a_filt["value"]
+
+        # Special case of cols to be filtered as NUMBERS:
+        if "filter" in col_def_dict[a_filt["column"]].keys() and col_def_dict[a_filt["column"]]["filter"] == "agNumberColumnFilter":
+            filt_obj["filterType"] = "number"
+            # Convert value to float (cuz is a str even for numbers, eg: '99'):
+            # ENH: Cast to correct dtype from 'lf_schema_dict' func input
+            filt_obj["filter"] = float(a_filt["value"])
+
+        # Cannot init a polars expr -> have to put in a list
+        expr_list.append(
+            parse_column_filter(filt_obj, a_filt["column"], lf_schema_dict)
+        )
+        logic_list.append(a_filt['logic'])
+
+    if len(expr_list)==1:
+        return expr_list[0]
+
+    final_expr = expr_list[0]
+    for i, a_expr in enumerate(expr_list[1:]):
+        if logic_list[i] == "and":
+            final_expr = final_expr.and_(a_expr)
+        elif logic_list[i] == "or":
+            final_expr = final_expr.and_(a_expr)        
+    return final_expr

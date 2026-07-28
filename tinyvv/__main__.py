@@ -1,13 +1,13 @@
 import logging
 import dash_ag_grid as dag
-from dash import Dash, Input, Output, dcc, html, no_update, callback
+from dash import Dash, Input, Output, State, dcc, html, no_update, callback
 import polars as pl
 import os.path as osp
 import yaml
 from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
-from .styling import colorize_GT, aggKey_to_func, format_to_tooltip
+from .styling import style_columns
 from .utils import parse_args, nice_dict
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
@@ -25,21 +25,16 @@ def main():
         ldf,
         ldf_schema_dict,
         filter_model=None,
-        columns=None,
+        col_def_dict=None,
         sort_model=None,
         ):
+        columns = list(col_def_dict.keys())
         if columns:
             ldf = ldf.select(columns)
         if filter_model:
-            expression_list = make_filter_expr_list(filter_model, ldf_schema_dict)
-            if expression_list:
-                filter_query = None
-                for expr in expression_list:
-                    if filter_query is None:
-                        filter_query = expr
-                    else:
-                        filter_query &= expr
-                ldf = ldf.filter(filter_query)
+            filter_query = make_filter_expr_list(filter_model, col_def_dict, ldf_schema_dict)
+            print(f"filter_query: {filter_query}")
+            ldf = ldf.filter(filter_query)
         return ldf
 
     # Parse arguments:
@@ -200,65 +195,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         compon_file.write(custom_compon.replace('BUILD', args.build))
 
 
-    # Set colDefs properties
-    # MEMO: Ag-grid expects a list of {field:i}
-    #       But for now simpler to use a dict with colname as key
-    pre_columnDefs={i:{"field": i} for i in wanted_cols}
-
-    # Color GT cols:
-    # ENH: Auto put DP,GQ as tooltip for 1st GT col ? (done in Achab)
-    for gt_col in GT_cols:
-        pre_columnDefs[gt_col]["cellStyle"] = colorize_GT()
-        pre_columnDefs[gt_col]["width"] = 150
-
-    # Render link in 'chr-pos-ref-alt' col:
-    # MEMO: JS func defined in 'dashAgGridComponentFunctions.js'
-    pre_columnDefs["CHROMPOSREFALT"]["cellRenderer"] = "chrPosRefAltLink"
-    pre_columnDefs["CHROMPOSREFALT"]["width"] = 100
-
-    # Change filterType of 'sort' column:
-    if config_OK and "sort" in conf.keys():
-        pre_columnDefs[conf["sort"][0]]["filter"] = "agNumberColumnFilter"
-
-    # Change filterType of relevant 'FORMAT' column:
-    nb_format_cols = GQ_cols + DP_cols + AB_cols
-    for fmt_col in nb_format_cols:
-        pre_columnDefs[fmt_col]["filter"] = "agNumberColumnFilter"
-    # Disable filtering on 'AD' cols (dtype incompat):
-    for fmt_col in AD_cols:
-        pre_columnDefs[fmt_col]["filter"] = False
-
-    # Change filterType of 'occurrence' column (if defined):
-    if 'occurrence' in pre_columnDefs.keys():
-        pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
-        pre_columnDefs["occurrence"]["width"] = 100
-        conf["agg_in_tooltip"]["occurrence"] = ["found_in"]
-
-    # Change filterType of 'id' column (if defined):
-    if 'id' in pre_columnDefs.keys():
-        pre_columnDefs["id"]["filter"] = "agNumberColumnFilter"
-
-    # Add tooltips:
-    # First add 'FORMAT' cols
-    if len(GT_cols) > 1:
-        if "agg_in_tooltip" not in conf.keys():
-            conf["agg_in_tooltip"] = {GT_cols[0]:format_to_tooltip(GT_cols)}
-        else:
-            conf["agg_in_tooltip"][GT_cols[0]] = format_to_tooltip(GT_cols)
-
-    if len(GT_cols) > 1 or (config_OK and "agg_in_tooltip" in conf.keys()):
-        to_hide = [x for sublist in conf["agg_in_tooltip"].values() for x in sublist]
-
-        for a_col in conf["agg_in_tooltip"].keys():
-            pre_columnDefs[a_col]["tooltipField"] = a_col  # Mandatory
-            ## aggKey_to_func() writes a JS func for each col where tooltip is added:
-            pre_columnDefs[a_col]["tooltipComponent"] = aggKey_to_func(conf['agg_in_tooltip'], a_col)
-
-        # Hide columns whose data are in tooltip:
-        for hide_col in to_hide:
-            pre_columnDefs[hide_col]["hide"] = True
-
-        logger.info("Wrote 'tinyvv/assets/dashAgGridComponentFunctions.js' for customTooltips")
+    pre_columnDefs = style_columns(config_OK, conf, wanted_cols)
 
     logger.debug(nice_dict(list(pre_columnDefs.values())))
 
@@ -270,16 +207,71 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
     app = Dash()
 
-    app.layout = html.Div(
-        [
-            dcc.Markdown("Infinite scroll with selectable rows"),
+    app.layout = html.Div([
+            # Zone de définition des filtres
+            html.Div(id="filter-builder", children=[
+                html.Div([
+                    # Ligne 1 : Colonne, Opérateur, Valeur
+                    dcc.Dropdown(
+                        id="filter-column",
+                        options=[{"label": col, "value": col} for col in wanted_cols],
+                        placeholder="Columns",
+                        style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    dcc.Dropdown(
+                        id="filter-operator",
+                        options=[
+                            {"label": "Contains", "value": "contains"},
+                            {"label": "Does not contain", "value": "notContains"},
+                            {"label": "Equals", "value": "equals"},
+                            {"label": "Does not equal", "value": "notEqual"},
+                            {"label": "Greater than", "value": "greaterThan"},
+                            {"label": "Greater than or equal to", "value": "greaterThanOrEqual"},
+                            {"label": "Less than", "value": "lessThan"},
+                            {"label": "Less than or equal to", "value": "lessThanOrEqual"},
+                            {"label": "Starts with", "value": "startsWith"},
+                            {"label": "Ends with", "value": "endsWith"},
+                            {"label": "Blank", "value": "isEmpty"},
+                            {"label": "Not blank", "value": "isNotEmpty"},
+                        ],
+                        placeholder="Operator",
+                        style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    dcc.Input(
+                        id="filter-value",
+                        type="text",
+                        placeholder="Value",
+                        style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    # Ligne 2 : ET/OU
+                    dcc.Dropdown(
+                        id="filter-logic",
+                        options=[
+                            {"label": "AND", "value": "and"},
+                            {"label": "OR", "value": "or"},
+                        ],
+                        value="and",
+                        style={"width": "100px", "display": "inline-block", "marginRight": "10px"}
+                    ),
+                    html.Button("ADD filter", id="add-filter", n_clicks=0),
+                ], style={"marginBottom": "20px"}),
+                # Liste des filtres ajoutés
+                html.Div(id="filter-list"),
+            ]),
+
+            # Boutons
+            html.Div([
+                html.Button("APPLY filters", id="apply-filters", n_clicks=0, style={"marginRight": "10px"}),
+                html.Button("RESET filters", id="reset-filters", n_clicks=0),
+            ], style={"marginBottom": "20px"}),
+
             dag.AgGrid(
-                id="infinite-grid",
+                id="grid",
                 style={"height": 600, "width": "100%"},
                 columnDefs=list(pre_columnDefs.values()),
                 defaultColDef={
                     "sortable": False,
-                    "filter": True,
+                    "filter": False,
                 },
                 rowModelType="infinite",
                 dashGridOptions={
@@ -298,26 +290,72 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                     "skipHeaderOnAutoSize": True,
                 },
             ),
-            dcc.Store(id="filter-model"),
+            dcc.Store(id="stored-filters", data=[]),
             html.Div(id="infinite-output"),
         ],
         style={"margin": 20},
     )
 
+
     @app.callback(
-    Output("infinite-grid", "getRowsResponse"),
-    Output("filter-model", "data"),
-    Input("infinite-grid", "getRowsRequest"),
-    Input("infinite-grid", "columnDefs")
+        Output("filter-list", "children", allow_duplicate=True),
+        Output("stored-filters", "data", allow_duplicate=True),
+        Input("reset-filters", "n_clicks"),
+        prevent_initial_call=True,
     )
-    def infinite_scroll(request, columnDefs):
+    def reset_filters(n_clicks):
+        # FIXME: reset_filters should update grid and remove applied filters ???
+        return html.Div(id="filter-list"), []
+
+    @app.callback(
+        Output("filter-list", "children"),
+        Output("stored-filters", "data"),
+        Input("add-filter", "n_clicks"),
+        State("filter-column", "value"),
+        State("filter-operator", "value"),
+        State("filter-value", "value"),
+        State("filter-logic", "value"),
+        State("stored-filters", "data"),
+        prevent_initial_call=True,
+    )
+    def add_filter(n_clicks, col, op, val, logic, stored_filters):
+        if not col or not op or (val is None and op not in ["isEmpty", "isNotEmpty"]):
+            return html.Div("Veuillez remplir tous les champs.", style={"color": "red"}), stored_filters
+
+        new_filter = {"column": col, "operator": op, "value": val, "logic": logic}
+        stored_filters = stored_filters or []
+        stored_filters.append(new_filter)
+
+        filter_items = [
+            html.Div([
+                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
+                html.Span(f" {f['logic'].upper()} ", style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+            for f in stored_filters
+        ]
+        # Le dernier filtre n'a pas de "ET/OU" après
+        if filter_items:
+            filter_items[-1] = html.Div([
+                html.Span(f"{stored_filters[-1]['column']} {stored_filters[-1]['operator']} {stored_filters[-1]['value']}"),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+
+        return html.Div(filter_items), stored_filters
+
+    @app.callback(
+    Output("grid", "getRowsResponse"),
+    Input("grid", "getRowsRequest"),
+    Input("apply-filters", "n_clicks"),
+    State("stored-filters", "data"),
+    prevent_initial_call=True,
+    )
+    def infinite_scroll(request, n_clicks, filters):
         if request is None:
             return no_update
         ldf = scan_ldf(
             DATA_SOURCE,
             dict_schema,
-            filter_model=request["filterModel"],
-            columns=wanted_cols
+            filter_model=filters,
+            col_def_dict=pre_columnDefs
         )
         start_call = perf_counter()
         partial = ldf[request["startRow"] : request["endRow"]].collect()
@@ -332,10 +370,10 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             dict_data["rowCount"] = 0
         logger.debug(f"Nb rows after filtering: {rows_count} (in {perf_counter()-start_call} seconds)")
         logger.debug(f"Estimated dataFrame size: {partial.estimated_size(unit='mb')} MB")
-        return dict_data, request["filterModel"]
+        return dict_data
+
 
     app.run(debug=False)
-
 
 if __name__ == "__main__":
     main()

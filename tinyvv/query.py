@@ -20,7 +20,7 @@ def join_gt_frames(LAKE, samples_list, cols_list=None):
         #selected_cols = ['id', 'gt', 'gq']  # DEBUG
         rename_dict = { c:f"{s}_{c.upper()}" for c in selected_cols if c != 'id' }
         pq_to_join = pl.scan_parquet(pq_path).select(selected_cols).rename(rename_dict)
-        pqs_list.append(pq_to_join)
+        pqs_list.append(pq_to_join.set_sorted('id'))
 
     all_parquets = { f"{samples_list[i]}":pq for i, pq in enumerate(pqs_list) }
     ctx = pl.SQLContext(frames=all_parquets)
@@ -99,8 +99,26 @@ def lake_data(LAKE, samples_list, cols_list=None):
 if __name__ == "__main__":
     LAKE = sys.argv[1]
     samplesList = sys.argv[2]
+    firstSample = samplesList.split(',')[0]
+    GT_cols = [f"{s}_GT" for s in samplesList.split(',')]
 
-    sliced = lake_data(LAKE, samplesList.split(','))[0:100]
+    full_data = lake_data(LAKE, samplesList.split(','))
+    if len(sys.argv) == 4:
+        full_data.select(
+            ['CHROMPOSREFALT']+GT_cols
+        ).sink_csv(
+            sys.argv[3],
+            include_header=False,
+            separator="\t",
+            null_value="0/0",
+        )
+    sliced = full_data
+    # Filter
+    #sliced = sliced.filter(pl.col(f"{firstSample}_GT")=="0/1")
+    # Filter2: harder cuz all joins have to happen first
+    sliced = sliced.filter(pl.col(f"{firstSample}_GT").eq("0/1") & pl.col("SYMBOL").eq("0/1"))
+    # Slice
+    sliced = sliced[0:50000]
     print(sliced.explain(optimized=True))
     print(sliced.collect_schema())
 
@@ -113,6 +131,10 @@ if __name__ == "__main__":
         show=False,
         output_path="plan.png",
     )
+
+    # Simply collect:
+    print(sliced.collect())
+    exit()
 
     # Collect and profile query:
     # WARN: '.profile()' works only with 'in-memory' engine
