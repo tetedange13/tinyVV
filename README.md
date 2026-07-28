@@ -16,7 +16,7 @@ No pagination (based on `AG Grid`'s "infinite scroll" feature)
 
 Works on millions of variants without loading them in memory (thanks to `AG Grid` + `polars` as a sort of backend)
 
-SearchBuilder to filter by multiple columns with AND/OR logic
+SearchBuilder to filter by multiple columns with AND/OR logic (+ you can search col name)
 
 Colored genotypes
 
