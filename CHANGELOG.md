@@ -31,6 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [0.8.1] - Unreleased
+
+### Fixed
+
+- Better match dtype inferred by Polars and ag-grid's "filterType".
+This way more cols can correctly be filtered as "number" (if dtype correctly inferred by Polars)
+
+<br>
+
 ## [0.8.0] - 2026-07-28
 
 ### Changed
