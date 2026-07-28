@@ -195,7 +195,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         compon_file.write(custom_compon.replace('BUILD', args.build))
 
 
-    pre_columnDefs = style_columns(config_OK, conf, wanted_cols)
+    number_cols_list = [ c for c in wanted_cols if dict_schema[c] in ("UInt32","Float64","Int64","Int32") ]
+    pre_columnDefs = style_columns(config_OK, conf, wanted_cols, number_cols_list)
 
     logger.debug(nice_dict(list(pre_columnDefs.values())))
 
