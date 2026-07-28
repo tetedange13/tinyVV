@@ -234,7 +234,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                             {"label": "Blank", "value": "isEmpty"},
                             {"label": "Not blank", "value": "isNotEmpty"},
                         ],
-                        placeholder="Operator",
+                        placeholder="Condition",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
                     ),
                     dcc.Input(
