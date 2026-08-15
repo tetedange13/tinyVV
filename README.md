@@ -113,9 +113,10 @@ python -m tinyvv \
 - Parquet inputs (single or as lake) should be provided as command-line argument
 - Most columns are filtered as they were "text" (including gnomAD freq for eg.)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
-- VCF filenames cannot contain '.' symbol (except for the extension)
+- VCF filenames cannot contain "." symbol (except for the extension)
 - When filtering, infinite scroll continues past filtered rows (with empty rows)
-- Filtering on 'AD' column crash app (type incompatibility error)
+- When filtering, no check is made between column type and filtering type (eg: asking "greater than" on a "text" column will crash app)
+- Filtering on "AD" column will crash app (type incompatibility error)
 - "RESET filters" button clear filters field but do not reset grid (as you would expect when you click Excel's "reset filters")
 - [parquets_lake] Empty values in ANN are shown as '.' (vs null in "single_pq" input)
 - [parquets_lake] Genotypes "0/0" are shown as "blank" but can be filtered as such (not converted for perf considerations)
