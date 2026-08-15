@@ -145,5 +145,5 @@ def make_filter_expr_list(filt_model, col_def_dict, lf_schema_dict):
         if logic_list[i] == "and":
             final_expr = final_expr.and_(a_expr)
         elif logic_list[i] == "or":
-            final_expr = final_expr.and_(a_expr)        
+            final_expr = final_expr.or_(a_expr)
     return final_expr

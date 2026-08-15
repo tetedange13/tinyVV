@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Better match dtype inferred by Polars and ag-grid's "filterType".
 This way more cols can correctly be filtered as "number" (if dtype correctly inferred by Polars)
+- "and" logic was always applied, even if "or" were selected
 
 <br>
 
