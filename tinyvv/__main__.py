@@ -34,7 +34,8 @@ def main():
             ldf = ldf.select(columns)
         if filter_model:
             filter_query = make_filter_expr_list(filter_model, col_def_dict, ldf_schema_dict)
-            print(f"filter_query: {filter_query}")
+            print("FULL_filter_query:", nice_dict(filter_model))
+            print(f"polars_filter_query: {filter_query}")
             ldf = ldf.filter(filter_query)
         return ldf
 
@@ -213,7 +214,15 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             # Zone de définition des filtres
             html.Div(id="filter-builder", children=[
                 html.Div([
-                    # Ligne 1 : Colonne, Opérateur, Valeur
+                    dcc.Dropdown(
+                        id="filter-logic",
+                        options=[
+                            {"label": "AND", "value": "and"},
+                            {"label": "OR", "value": "or"},
+                        ],
+                        value="and",
+                        style={"width": "125px", "display": "inline-block", "marginRight": "10px"}
+                    ),
                     dcc.Dropdown(
                         id="filter-column",
                         options=[{"label": col, "value": col} for col in wanted_cols],
@@ -244,16 +253,6 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                         type="text",
                         placeholder="Value",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
-                    ),
-                    # Ligne 2 : ET/OU
-                    dcc.Dropdown(
-                        id="filter-logic",
-                        options=[
-                            {"label": "AND", "value": "and"},
-                            {"label": "OR", "value": "or"},
-                        ],
-                        value="and",
-                        style={"width": "100px", "display": "inline-block", "marginRight": "10px"}
                     ),
                     html.Button("ADD filter", id="add-filter", n_clicks=0),
                 ], style={"marginBottom": "20px"}),
@@ -313,32 +312,36 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         Output("filter-list", "children"),  # DUPLICATED
         Output("stored-filters", "data"),  # DUPLICATED
         Input("add-filter", "n_clicks"),
+        State("filter-logic", "value"),
         State("filter-column", "value"),
         State("filter-operator", "value"),
         State("filter-value", "value"),
-        State("filter-logic", "value"),
         State("stored-filters", "data"),
         prevent_initial_call=True,
     )
-    def add_filter(n_clicks, col, op, val, logic, stored_filters):
+    def add_filter(n_clicks, logic, col, op, val, stored_filters):
         if not col or not op or (val is None and op not in ["isEmpty", "isNotEmpty"]):
             return html.Div("Veuillez remplir tous les champs.", style={"color": "red"}), stored_filters
 
-        new_filter = {"column": col, "operator": op, "value": val, "logic": logic}
+        new_filter = {"logic": logic, "column": col, "operator": op, "value": val}
         stored_filters = stored_filters or []
         stored_filters.append(new_filter)
 
+        #
         filter_items = [
             html.Div([
+                html.Span(
+                    f" {f['logic'].upper()} ",
+                    style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}
+                ),
                 html.Span(f"{f['column']} {f['operator']} {f['value']}"),
-                html.Span(f" {f['logic'].upper()} ", style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}),
             ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
             for f in stored_filters
         ]
-        # Le dernier filtre n'a pas de "ET/OU" après
+        # Le premier filtre n'a pas de "ET/OU" avant
         if filter_items:
-            filter_items[-1] = html.Div([
-                html.Span(f"{stored_filters[-1]['column']} {stored_filters[-1]['operator']} {stored_filters[-1]['value']}"),
+            filter_items[0] = html.Div([
+                html.Span(f"{stored_filters[0]['column']} {stored_filters[0]['operator']} {stored_filters[0]['value']}"),
             ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
 
         return html.Div(filter_items), stored_filters

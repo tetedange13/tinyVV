@@ -116,11 +116,9 @@ def parse_column_filter(filter_obj, col_name, lf_schema_dict):
 def make_filter_expr_list(filt_model, col_def_dict, lf_schema_dict):
     expr_list = []  # init Polars expression
     logic_list = []
-    filt_obj = {}
-    #dict_logic = 
     for a_filt in filt_model:
-        # mimic object structure for column-wise filtering
-        filt_obj = {"type":a_filt["operator"]}
+        # Intermediate var that mimics object structure from column-wise filtering
+        filt_obj = { "type" : a_filt["operator"] }
         filt_obj["filterType"] = "text"
         filt_obj["filter"] = a_filt["value"]
 
@@ -135,15 +133,16 @@ def make_filter_expr_list(filt_model, col_def_dict, lf_schema_dict):
         expr_list.append(
             parse_column_filter(filt_obj, a_filt["column"], lf_schema_dict)
         )
-        logic_list.append(a_filt['logic'])
+        logic_list.append(a_filt["logic"])
 
     if len(expr_list)==1:
         return expr_list[0]
 
     final_expr = expr_list[0]
     for i, a_expr in enumerate(expr_list[1:]):
-        if logic_list[i] == "and":
+        # MEMO: 'i+1' required to use correct logic corresponding to condition
+        if logic_list[i+1] == "and":
             final_expr = final_expr.and_(a_expr)
-        elif logic_list[i] == "or":
+        elif logic_list[i+1] == "or":
             final_expr = final_expr.or_(a_expr)
     return final_expr
