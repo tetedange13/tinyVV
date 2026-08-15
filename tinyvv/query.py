@@ -28,7 +28,9 @@ def join_gt_frames(LAKE, samples_list, cols_list=None):
     # Full join on id:
     # MEMO: 'NATURAL' means 'join on common cols + coalesce'
     # WARN: Should I make sure 'id' is the only common col ???
-    join_gt_expr = '\n'.join([ f"NATURAL FULL JOIN {samples_list[other+1]}" for other,_ in enumerate(pqs_list[1:]) ])
+    join_gt_expr = '\n'.join(
+        [ f"NATURAL FULL JOIN {samples_list[other+1]}" for other,_ in enumerate(pqs_list[1:]) ]
+    )
 
     # WARN: 'concat diag' not doing a full join
     #joint_gt = pl.concat(pqs_list, how='diagonal')

@@ -2,6 +2,7 @@ import logging
 import dash_ag_grid as dag
 from dash import Dash, Input, Output, State, dcc, html, no_update, callback
 import polars as pl
+from polars import col as c
 import os.path as osp
 import yaml
 from time import perf_counter
@@ -82,10 +83,10 @@ def main():
         DATA_SOURCE = DATA_SOURCE.with_columns(
             pl.concat_str(
                 [
-                    pl.col('chromosome'),
-                    pl.col('position').cast(str),
-                    pl.col('reference'),
-                    pl.col('alternate').list.join(separator=""),
+                    c('chromosome'),
+                    c('position').cast(str),
+                    c('reference'),
+                    c('alternate').list.join(separator=""),
                 ],
                 separator="-",
             ).alias("CHROMPOSREFALT")
@@ -96,7 +97,7 @@ def main():
             dp_colname = gt_col.replace('_GT', '_DP')
             ab_colname = gt_col.replace('_GT', '_AB')
             DATA_SOURCE = DATA_SOURCE.with_columns(
-                (pl.col(ad_colname).list[1]/pl.col(dp_colname)).alias(ab_colname)
+                (c(ad_colname).list[1]/c(dp_colname)).alias(ab_colname)
             )
         # Collect new renamed schema:
         full_schema = DATA_SOURCE.collect_schema()
@@ -157,7 +158,7 @@ def main():
         if full_schema[conf['sort'][0]] == pl.List(str):
             # First join list(str) -> str, then cast to int
             DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.col(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
+                c(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
                 ).sort(by=conf['sort'][0], descending=conf['sort'][1])
         else: # just sort
             DATA_SOURCE = DATA_SOURCE.with_columns(
@@ -299,8 +300,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
 
     @app.callback(
-        Output("filter-list", "children", allow_duplicate=True),
-        Output("stored-filters", "data", allow_duplicate=True),
+        Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
+        Output("stored-filters", "data", allow_duplicate=True),  # DUPLICATED
         Input("reset-filters", "n_clicks"),
         prevent_initial_call=True,
     )
@@ -309,8 +310,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         return html.Div(id="filter-list"), []
 
     @app.callback(
-        Output("filter-list", "children"),
-        Output("stored-filters", "data"),
+        Output("filter-list", "children"),  # DUPLICATED
+        Output("stored-filters", "data"),  # DUPLICATED
         Input("add-filter", "n_clicks"),
         State("filter-column", "value"),
         State("filter-operator", "value"),
