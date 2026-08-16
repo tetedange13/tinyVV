@@ -323,10 +323,13 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
         Output("stored-filters", "data", allow_duplicate=True),  # DUPLICATED
         Input("load-filters", "n_clicks"),
+        State("load-filter-value", "value"),
         prevent_initial_call=True,
     )
-    def load_filters(n_clicks):
-        saved_filters_path = "saved_filters.json"
+    def load_filters(n_clicks, saved_filters_path):
+        # ENH: Handle invalid json file ?
+        if not osp.isfile(saved_filters_path):
+            return html.Div(f"Filter file '{saved_filters_path}' not found", style={"color": "red"}),[]
         with open(saved_filters_path, 'r') as saved_filters_file:
             saved_filters = json.load(saved_filters_file)
         # Shown filters list
