@@ -5,6 +5,7 @@ import polars as pl
 from polars import col as c
 import os.path as osp
 import yaml
+import json
 from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
@@ -260,10 +261,20 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                 html.Div(id="filter-list"),
             ]),
 
-            # Boutons
+            # Apply/reset filters bouttons
             html.Div([
                 html.Button("APPLY filters", id="apply-filters", n_clicks=0, style={"marginRight": "10px"}),
                 html.Button("RESET filters", id="reset-filters", n_clicks=0),
+            ], style={"marginBottom": "20px"}),
+            # Load/save filters bouttons
+            html.Div([
+                dcc.Input(
+                    id="load-filter-value",
+                    type="text",
+                    placeholder="Eg: saved_filters.json",
+                    style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                ),
+                html.Button("LOAD filters", id="load-filters", n_clicks=0),
             ], style={"marginBottom": "20px"}),
 
             dag.AgGrid(
@@ -309,6 +320,36 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         return html.Div(id="filter-list"), []
 
     @app.callback(
+        Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
+        Output("stored-filters", "data", allow_duplicate=True),  # DUPLICATED
+        Input("load-filters", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def load_filters(n_clicks):
+        saved_filters_path = "saved_filters.json"
+        with open(saved_filters_path, 'r') as saved_filters_file:
+            saved_filters = json.load(saved_filters_file)
+        # Shown filters list
+        # ENH: Deduplicate bellow code (cf. 'add_filter()')
+        filter_items = [
+            html.Div([
+                html.Span(
+                    f" {f['logic'].upper()} ",
+                    style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}
+                ),
+                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+            for f in saved_filters
+        ]
+        # Le premier filtre n'a pas de "ET/OU" avant
+        if filter_items:
+            filter_items[0] = html.Div([
+                html.Span(f"{saved_filters[0]['column']} {saved_filters[0]['operator']} {saved_filters[0]['value']}"),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+
+        return html.Div(filter_items), saved_filters
+
+    @app.callback(
         Output("filter-list", "children"),  # DUPLICATED
         Output("stored-filters", "data"),  # DUPLICATED
         Input("add-filter", "n_clicks"),
@@ -327,7 +368,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         stored_filters = stored_filters or []
         stored_filters.append(new_filter)
 
-        #
+        # Shown filters list
         filter_items = [
             html.Div([
                 html.Span(
@@ -356,6 +397,10 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     def infinite_scroll(request, n_clicks, filters):
         if request is None:
             return no_update
+        # ENH: Save filters only when asked by user
+        if filters:
+            with open("saved_filters.json", 'w') as saved_filters_path:
+                json.dump(filters, saved_filters_path, indent=2)
         ldf = scan_ldf(
             DATA_SOURCE,
             dict_schema,
