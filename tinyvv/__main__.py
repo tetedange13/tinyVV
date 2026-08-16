@@ -269,12 +269,19 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             # Load/save filters bouttons
             html.Div([
                 dcc.Input(
-                    id="load-filter-value",
+                    id="load-filters-value",
                     type="text",
                     placeholder="Eg: saved_filters.json",
-                    style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
+                    style={"width": "180px", "display": "inline-block"}
                 ),
-                html.Button("LOAD filters", id="load-filters", n_clicks=0),
+                html.Button("LOAD filters", id="load-filters", n_clicks=0, style={"marginRight": "20px"}),
+                dcc.Input(
+                    id="save-filters-value",
+                    type="text",
+                    placeholder="Eg: my_filters.json",
+                    style={"width": "180px", "display": "inline-block"}
+                ),
+                html.Button("SAVE filters", id="save-filters", n_clicks=0),
             ], style={"marginBottom": "20px"}),
 
             dag.AgGrid(
@@ -320,16 +327,49 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         return html.Div(id="filter-list"), []
 
     @app.callback(
+    Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
+    Input("save-filters", "n_clicks"),
+    State("save-filters-value", "value"),
+    State("stored-filters", "data"),
+    prevent_initial_call=True,
+    )
+    def save_filters(n_clicks, saved_filters_path, stored_filters):
+        if not stored_filters:
+            return html.Div("Select filters before saving", style={"color": "red"})
+        with open(saved_filters_path, 'w') as saved_filters:
+            print(stored_filters, saved_filters)
+            json.dump(stored_filters, saved_filters, indent=2)
+            logger.debug(f"Wrote filters file: '{saved_filters_path}'")
+        # Shown filters list
+        # ENH: Deduplicate bellow code (cf. 'add_filter()')
+        filter_items = [
+            html.Div([
+                html.Span(
+                    f" {f['logic'].upper()} ",
+                    style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}
+                ),
+                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+            for f in stored_filters
+        ]
+        # Le premier filtre n'a pas de "ET/OU" avant
+        if filter_items:
+            filter_items[0] = html.Div([
+                html.Span(f"{stored_filters[0]['column']} {stored_filters[0]['operator']} {stored_filters[0]['value']}"),
+            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
+        return html.Div(filter_items)
+
+    @app.callback(
         Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
         Output("stored-filters", "data", allow_duplicate=True),  # DUPLICATED
         Input("load-filters", "n_clicks"),
-        State("load-filter-value", "value"),
+        State("load-filters-value", "value"),
         prevent_initial_call=True,
     )
     def load_filters(n_clicks, saved_filters_path):
         # ENH: Handle invalid json file ?
         if not osp.isfile(saved_filters_path):
-            return html.Div(f"Filter file '{saved_filters_path}' not found", style={"color": "red"}),[]
+            return html.Div(f"Filter file '{saved_filters_path}' not found", style={"color": "red"}), []
         with open(saved_filters_path, 'r') as saved_filters_file:
             saved_filters = json.load(saved_filters_file)
         # Shown filters list
@@ -400,10 +440,6 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     def infinite_scroll(request, n_clicks, filters):
         if request is None:
             return no_update
-        # ENH: Save filters only when asked by user
-        if filters:
-            with open("saved_filters.json", 'w') as saved_filters_path:
-                json.dump(filters, saved_filters_path, indent=2)
         ldf = scan_ldf(
             DATA_SOURCE,
             dict_schema,
