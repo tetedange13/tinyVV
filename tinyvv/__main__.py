@@ -45,12 +45,12 @@ def main():
 
     config_OK = args.config and osp.isfile(args.config)
     if config_OK:
-        logging.info("Found 'sample.yaml' -> loading conf")
+        logger.info("Found 'sample.yaml' -> loading conf")
         with open(args.config, 'r') as conf_file:
             conf = yaml.safe_load(conf_file)
-        logging.debug(nice_dict(conf))
+        logger.debug(nice_dict(conf))
     else:
-        logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
+        logger.warning("No 'sample.yaml' found near input 'sample.parquet'")
         # Declare 'conf' anyway cuz used for 'agg_in_tooltip' on occurrence, GT:
         conf = {}
 
