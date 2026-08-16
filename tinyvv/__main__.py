@@ -10,7 +10,7 @@ from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
 from .styling import style_columns
-from .utils import parse_args, nice_dict
+from .utils import parse_args, nice_dict, filters_to_span
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
 pl.Config.set_engine_affinity("streaming")
@@ -336,27 +336,13 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     def save_filters(n_clicks, saved_filters_path, stored_filters):
         if not stored_filters:
             return html.Div("Select filters before saving", style={"color": "red"})
+
         with open(saved_filters_path, 'w') as saved_filters:
             json.dump(stored_filters, saved_filters, indent=2)
             logger.debug(f"Wrote filters file: '{saved_filters_path}'")
-        # Shown filters list
-        # ENH: Deduplicate bellow code (cf. 'add_filter()')
-        filter_items = [
-            html.Div([
-                html.Span(
-                    f" {f['logic'].upper()} ",
-                    style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}
-                ),
-                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
-            for f in stored_filters
-        ]
-        # Le premier filtre n'a pas de "ET/OU" avant
-        if filter_items:
-            filter_items[0] = html.Div([
-                html.Span(f"{stored_filters[0]['column']} {stored_filters[0]['operator']} {stored_filters[0]['value']}"),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
-        return html.Div(filter_items)
+
+        shown_filters = filters_to_span(stored_filters)
+        return shown_filters
 
     @app.callback(
         Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
@@ -369,27 +355,12 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         # ENH: Handle invalid json file ?
         if not osp.isfile(saved_filters_path):
             return html.Div(f"Filter file '{saved_filters_path}' not found", style={"color": "red"}), []
+
         with open(saved_filters_path, 'r') as saved_filters_file:
             saved_filters = json.load(saved_filters_file)
-        # Shown filters list
-        # ENH: Deduplicate bellow code (cf. 'add_filter()')
-        filter_items = [
-            html.Div([
-                html.Span(
-                    f" {f['logic'].upper()} ",
-                    style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}
-                ),
-                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
-            for f in saved_filters
-        ]
-        # Le premier filtre n'a pas de "ET/OU" avant
-        if filter_items:
-            filter_items[0] = html.Div([
-                html.Span(f"{saved_filters[0]['column']} {saved_filters[0]['operator']} {saved_filters[0]['value']}"),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
 
-        return html.Div(filter_items), saved_filters
+        shown_filters = filters_to_span(saved_filters)
+        return shown_filters, saved_filters
 
     @app.callback(
         Output("filter-list", "children"),  # DUPLICATED
@@ -410,24 +381,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         stored_filters = stored_filters or []
         stored_filters.append(new_filter)
 
-        # Shown filters list
-        filter_items = [
-            html.Div([
-                html.Span(
-                    f" {f['logic'].upper()} ",
-                    style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}
-                ),
-                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
-            for f in stored_filters
-        ]
-        # Le premier filtre n'a pas de "ET/OU" avant
-        if filter_items:
-            filter_items[0] = html.Div([
-                html.Span(f"{stored_filters[0]['column']} {stored_filters[0]['operator']} {stored_filters[0]['value']}"),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
-
-        return html.Div(filter_items), stored_filters
+        shown_filters = filters_to_span(stored_filters)
+        return shown_filters, stored_filters
 
     @app.callback(
     Output("grid", "getRowsResponse"),
