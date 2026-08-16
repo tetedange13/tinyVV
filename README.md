@@ -10,7 +10,7 @@ Very early stage, **use at your own risk**
 
 Read single VCF converted in parquet by `vcf2parquet`
 
-Read multiple VCF converted to a lake by `variantPlaner`
+Read multiple VCF converted to a parquets lake by `variant-planer`
 
 No pagination (based on `AG Grid`'s "infinite scroll" feature)
 
@@ -18,7 +18,7 @@ Works on millions of variants without loading them in memory (thanks to `AG Grid
 
 SearchBuilder to filter by multiple columns with AND/OR logic (+ you can search col name)
 
-Colored genotypes
+Possible to save filters (JSON file) and load filters from previously saved file
 
 FORMAT values of other samples shown as tooltip of "1st_sample_GT" col
 
@@ -28,6 +28,9 @@ Customization through companion yaml (see [documentation](https://github.com/tet
 * Add a tooltip for a column, with info from other columns (hidden if so)
 
 Link to Franklin variant page through `CHROMPOSREFALT` column
+
+Genotypes colored based on their value
+
 
 <br>
 
