@@ -337,7 +337,6 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         if not stored_filters:
             return html.Div("Select filters before saving", style={"color": "red"})
         with open(saved_filters_path, 'w') as saved_filters:
-            print(stored_filters, saved_filters)
             json.dump(stored_filters, saved_filters, indent=2)
             logger.debug(f"Wrote filters file: '{saved_filters_path}'")
         # Shown filters list
