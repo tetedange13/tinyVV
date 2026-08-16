@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This way more cols can correctly be filtered as "number" (if dtype correctly inferred by Polars)
 - "and" logic was always applied, even if "or" were selected
 - Put "logic" (and/or) as 1st on the left (smoother this way)
+- Show back "no rows to show" when filtering returns nothing (broken with searchBuilder)
 
 <br>
 

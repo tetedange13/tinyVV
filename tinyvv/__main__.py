@@ -391,13 +391,13 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     State("stored-filters", "data"),
     prevent_initial_call=True,
     )
-    def infinite_scroll(request, n_clicks, filters):
+    def infinite_scroll(request, n_clicks, stored_filters):
         if request is None:
             return no_update
         ldf = scan_ldf(
             DATA_SOURCE,
             dict_schema,
-            filter_model=filters,
+            filter_model=stored_filters,
             col_def_dict=pre_columnDefs
         )
         start_call = perf_counter()
@@ -407,7 +407,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         }
         dict_data["rowCount"] = total_rows
         rows_count = partial.shape[0]
-        if request["filterModel"] and rows_count == 0:
+        if stored_filters and rows_count == 0:
             # MEMO: Does NOT set 'rowCount' in other context
             #       Otherwise it stops scrolling when end reached
             dict_data["rowCount"] = 0
