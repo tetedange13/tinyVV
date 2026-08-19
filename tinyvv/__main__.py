@@ -2,13 +2,15 @@ import logging
 import dash_ag_grid as dag
 from dash import Dash, Input, Output, State, dcc, html, no_update, callback
 import polars as pl
+from polars import col as c
 import os.path as osp
 import yaml
+import json
 from time import perf_counter
 # LOCAL imports
 from .filtering import make_filter_expr_list
 from .styling import style_columns
-from .utils import parse_args, nice_dict
+from .utils import parse_args, nice_dict, filters_to_span
 from .query import lake_schema, lake_data
 logger = logging.getLogger(__name__)
 pl.Config.set_engine_affinity("streaming")
@@ -33,7 +35,8 @@ def main():
             ldf = ldf.select(columns)
         if filter_model:
             filter_query = make_filter_expr_list(filter_model, col_def_dict, ldf_schema_dict)
-            print(f"filter_query: {filter_query}")
+            print("FULL_filter_query:", nice_dict(filter_model))
+            print(f"polars_filter_query: {filter_query}")
             ldf = ldf.filter(filter_query)
         return ldf
 
@@ -42,12 +45,12 @@ def main():
 
     config_OK = args.config and osp.isfile(args.config)
     if config_OK:
-        logging.info("Found 'sample.yaml' -> loading conf")
+        logger.info("Found 'sample.yaml' -> loading conf")
         with open(args.config, 'r') as conf_file:
             conf = yaml.safe_load(conf_file)
-        logging.debug(nice_dict(conf))
+        logger.debug(nice_dict(conf))
     else:
-        logging.warning("No 'sample.yaml' found near input 'sample.parquet'")
+        logger.warning("No 'sample.yaml' found near input 'sample.parquet'")
         # Declare 'conf' anyway cuz used for 'agg_in_tooltip' on occurrence, GT:
         conf = {}
 
@@ -82,10 +85,10 @@ def main():
         DATA_SOURCE = DATA_SOURCE.with_columns(
             pl.concat_str(
                 [
-                    pl.col('chromosome'),
-                    pl.col('position').cast(str),
-                    pl.col('reference'),
-                    pl.col('alternate').list.join(separator=""),
+                    c('chromosome'),
+                    c('position').cast(str),
+                    c('reference'),
+                    c('alternate').list.join(separator=""),
                 ],
                 separator="-",
             ).alias("CHROMPOSREFALT")
@@ -96,7 +99,7 @@ def main():
             dp_colname = gt_col.replace('_GT', '_DP')
             ab_colname = gt_col.replace('_GT', '_AB')
             DATA_SOURCE = DATA_SOURCE.with_columns(
-                (pl.col(ad_colname).list[1]/pl.col(dp_colname)).alias(ab_colname)
+                (c(ad_colname).list[1]/c(dp_colname)).alias(ab_colname)
             )
         # Collect new renamed schema:
         full_schema = DATA_SOURCE.collect_schema()
@@ -157,7 +160,7 @@ def main():
         if full_schema[conf['sort'][0]] == pl.List(str):
             # First join list(str) -> str, then cast to int
             DATA_SOURCE = DATA_SOURCE.with_columns(
-                pl.col(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
+                c(conf['sort'][0]).list.join(separator="").cast(pl.Int32)
                 ).sort(by=conf['sort'][0], descending=conf['sort'][1])
         else: # just sort
             DATA_SOURCE = DATA_SOURCE.with_columns(
@@ -195,7 +198,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         compon_file.write(custom_compon.replace('BUILD', args.build))
 
 
-    pre_columnDefs = style_columns(config_OK, conf, wanted_cols)
+    number_cols_list = [ c for c in wanted_cols if dict_schema[c] in ("UInt32","Float64","Int64","Int32") ]
+    pre_columnDefs = style_columns(config_OK, conf, wanted_cols, number_cols_list)
 
     logger.debug(nice_dict(list(pre_columnDefs.values())))
 
@@ -211,7 +215,15 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
             # Zone de définition des filtres
             html.Div(id="filter-builder", children=[
                 html.Div([
-                    # Ligne 1 : Colonne, Opérateur, Valeur
+                    dcc.Dropdown(
+                        id="filter-logic",
+                        options=[
+                            {"label": "AND", "value": "and"},
+                            {"label": "OR", "value": "or"},
+                        ],
+                        value="and",
+                        style={"width": "125px", "display": "inline-block", "marginRight": "10px"}
+                    ),
                     dcc.Dropdown(
                         id="filter-column",
                         options=[{"label": col, "value": col} for col in wanted_cols],
@@ -234,7 +246,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                             {"label": "Blank", "value": "isEmpty"},
                             {"label": "Not blank", "value": "isNotEmpty"},
                         ],
-                        placeholder="Operator",
+                        placeholder="Condition",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
                     ),
                     dcc.Input(
@@ -243,26 +255,33 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                         placeholder="Value",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
                     ),
-                    # Ligne 2 : ET/OU
-                    dcc.Dropdown(
-                        id="filter-logic",
-                        options=[
-                            {"label": "AND", "value": "and"},
-                            {"label": "OR", "value": "or"},
-                        ],
-                        value="and",
-                        style={"width": "100px", "display": "inline-block", "marginRight": "10px"}
-                    ),
                     html.Button("ADD filter", id="add-filter", n_clicks=0),
                 ], style={"marginBottom": "20px"}),
                 # Liste des filtres ajoutés
                 html.Div(id="filter-list"),
             ]),
 
-            # Boutons
+            # Apply/reset filters bouttons
             html.Div([
                 html.Button("APPLY filters", id="apply-filters", n_clicks=0, style={"marginRight": "10px"}),
                 html.Button("RESET filters", id="reset-filters", n_clicks=0),
+            ], style={"marginBottom": "20px"}),
+            # Load/save filters bouttons
+            html.Div([
+                dcc.Input(
+                    id="load-filters-value",
+                    type="text",
+                    placeholder="Eg: saved_filters.json",
+                    style={"width": "180px", "display": "inline-block"}
+                ),
+                html.Button("LOAD filters", id="load-filters", n_clicks=0, style={"marginRight": "20px"}),
+                dcc.Input(
+                    id="save-filters-value",
+                    type="text",
+                    placeholder="Eg: my_filters.json",
+                    style={"width": "180px", "display": "inline-block"}
+                ),
+                html.Button("SAVE filters", id="save-filters", n_clicks=0),
             ], style={"marginBottom": "20px"}),
 
             dag.AgGrid(
@@ -298,8 +317,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
 
 
     @app.callback(
-        Output("filter-list", "children", allow_duplicate=True),
-        Output("stored-filters", "data", allow_duplicate=True),
+        Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
+        Output("stored-filters", "data", allow_duplicate=True),  # DUPLICATED
         Input("reset-filters", "n_clicks"),
         prevent_initial_call=True,
     )
@@ -308,38 +327,62 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         return html.Div(id="filter-list"), []
 
     @app.callback(
-        Output("filter-list", "children"),
-        Output("stored-filters", "data"),
+    Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
+    Input("save-filters", "n_clicks"),
+    State("save-filters-value", "value"),
+    State("stored-filters", "data"),
+    prevent_initial_call=True,
+    )
+    def save_filters(n_clicks, saved_filters_path, stored_filters):
+        if not stored_filters:
+            return html.Div("Select filters before saving", style={"color": "red"})
+
+        with open(saved_filters_path, 'w') as saved_filters:
+            json.dump(stored_filters, saved_filters, indent=2)
+            logger.debug(f"Wrote filters file: '{saved_filters_path}'")
+
+        shown_filters = filters_to_span(stored_filters)
+        return shown_filters
+
+    @app.callback(
+        Output("filter-list", "children", allow_duplicate=True),  # DUPLICATED
+        Output("stored-filters", "data", allow_duplicate=True),  # DUPLICATED
+        Input("load-filters", "n_clicks"),
+        State("load-filters-value", "value"),
+        prevent_initial_call=True,
+    )
+    def load_filters(n_clicks, saved_filters_path):
+        # ENH: Handle invalid json file ?
+        if not osp.isfile(saved_filters_path):
+            return html.Div(f"Filter file '{saved_filters_path}' not found", style={"color": "red"}), []
+
+        with open(saved_filters_path, 'r') as saved_filters_file:
+            saved_filters = json.load(saved_filters_file)
+
+        shown_filters = filters_to_span(saved_filters)
+        return shown_filters, saved_filters
+
+    @app.callback(
+        Output("filter-list", "children"),  # DUPLICATED
+        Output("stored-filters", "data"),  # DUPLICATED
         Input("add-filter", "n_clicks"),
+        State("filter-logic", "value"),
         State("filter-column", "value"),
         State("filter-operator", "value"),
         State("filter-value", "value"),
-        State("filter-logic", "value"),
         State("stored-filters", "data"),
         prevent_initial_call=True,
     )
-    def add_filter(n_clicks, col, op, val, logic, stored_filters):
+    def add_filter(n_clicks, logic, col, op, val, stored_filters):
         if not col or not op or (val is None and op not in ["isEmpty", "isNotEmpty"]):
             return html.Div("Veuillez remplir tous les champs.", style={"color": "red"}), stored_filters
 
-        new_filter = {"column": col, "operator": op, "value": val, "logic": logic}
+        new_filter = {"logic": logic, "column": col, "operator": op, "value": val}
         stored_filters = stored_filters or []
         stored_filters.append(new_filter)
 
-        filter_items = [
-            html.Div([
-                html.Span(f"{f['column']} {f['operator']} {f['value']}"),
-                html.Span(f" {f['logic'].upper()} ", style={"fontWeight": "bold", "marginLeft": "10px", "marginRight": "10px"}),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
-            for f in stored_filters
-        ]
-        # Le dernier filtre n'a pas de "ET/OU" après
-        if filter_items:
-            filter_items[-1] = html.Div([
-                html.Span(f"{stored_filters[-1]['column']} {stored_filters[-1]['operator']} {stored_filters[-1]['value']}"),
-            ], style={"marginBottom": "5px", "padding": "5px", "border": "1px solid #ddd", "borderRadius": "5px"})
-
-        return html.Div(filter_items), stored_filters
+        shown_filters = filters_to_span(stored_filters)
+        return shown_filters, stored_filters
 
     @app.callback(
     Output("grid", "getRowsResponse"),
@@ -348,13 +391,13 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     State("stored-filters", "data"),
     prevent_initial_call=True,
     )
-    def infinite_scroll(request, n_clicks, filters):
+    def infinite_scroll(request, n_clicks, stored_filters):
         if request is None:
             return no_update
         ldf = scan_ldf(
             DATA_SOURCE,
             dict_schema,
-            filter_model=filters,
+            filter_model=stored_filters,
             col_def_dict=pre_columnDefs
         )
         start_call = perf_counter()
@@ -364,7 +407,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         }
         dict_data["rowCount"] = total_rows
         rows_count = partial.shape[0]
-        if request["filterModel"] and rows_count == 0:
+        if stored_filters and rows_count == 0:
             # MEMO: Does NOT set 'rowCount' in other context
             #       Otherwise it stops scrolling when end reached
             dict_data["rowCount"] = 0

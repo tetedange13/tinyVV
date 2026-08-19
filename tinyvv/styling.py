@@ -54,11 +54,15 @@ def format_to_tooltip(GT_cols):
     return list_in_tooltip
 
 
-def style_columns(is_config_OK, conf_dict, wanted_cols_list):
+def style_columns(is_config_OK, conf_dict, wanted_cols_list, number_cols):
     # Set colDefs properties
     # MEMO: Ag-grid expects a list of {field:i}
     #       But for now simpler to use a dict with colname as key
     pre_columnDefs={i:{"field": i} for i in wanted_cols_list}
+
+    # Set "filterType=agNumberColumnFilter" for all "number_cols":
+    for a_col in number_cols:
+        pre_columnDefs[a_col]["filter"] = "agNumberColumnFilter"
 
     # Deduce GT cols from wanted_cols (assume order is preserved):
     GT_cols = [ c for c in wanted_cols_list if c.endswith('_GT') ]

@@ -31,6 +31,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [0.9.1] - Unreleased
+
+### ToFix
+
+- Blank/not_blank does not expect value -> crash
+- Some cols are still col-wise filtrable (eg: occurr, DP)
+
+<br>
+
+## [0.9.0] - 2026-08-19
+
+### Fixed
+
+- Better match dtype inferred by Polars and ag-grid's "filterType".
+This way more cols can correctly be filtered as "number" (if dtype correctly inferred by Polars)
+- "and" logic was always applied, even if "or" were selected
+- Put "logic" (and/or) as 1st on the left (smoother this way)
+- Show back "no rows to show" when filtering returns nothing (broken with searchBuilder)
+
+### Added
+
+- Can now save filters (JSON file) and load filters from previously saved file
+
+<br>
+
 ## [0.8.0] - 2026-07-28
 
 ### Changed

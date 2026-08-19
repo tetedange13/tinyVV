@@ -10,15 +10,15 @@ Very early stage, **use at your own risk**
 
 Read single VCF converted in parquet by `vcf2parquet`
 
-Read multiple VCF converted to a lake by `variantPlaner`
+Read multiple VCF converted to a parquets lake by `variant-planer`
 
 No pagination (based on `AG Grid`'s "infinite scroll" feature)
 
 Works on millions of variants without loading them in memory (thanks to `AG Grid` + `polars` as a sort of backend)
 
-SearchBuilder to filter by multiple columns with AND/OR logic
+SearchBuilder to filter by multiple columns with AND/OR logic (+ you can search col name)
 
-Colored genotypes
+Possible to save filters (JSON file) and load filters from previously saved file
 
 FORMAT values of other samples shown as tooltip of "1st_sample_GT" col
 
@@ -28,6 +28,9 @@ Customization through companion yaml (see [documentation](https://github.com/tet
 * Add a tooltip for a column, with info from other columns (hidden if so)
 
 Link to Franklin variant page through `CHROMPOSREFALT` column
+
+Genotypes colored based on their value
+
 
 <br>
 
@@ -113,9 +116,10 @@ python -m tinyvv \
 - Parquet inputs (single or as lake) should be provided as command-line argument
 - Most columns are filtered as they were "text" (including gnomAD freq for eg.)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
-- VCF filenames cannot contain '.' symbol (except for the extension)
+- VCF filenames cannot contain "." symbol (except for the extension)
 - When filtering, infinite scroll continues past filtered rows (with empty rows)
-- Filtering on 'AD' column crash app (type incompatibility error)
+- When filtering, no check is made between column type and filtering type (eg: asking "greater than" on a "text" column will crash app)
+- Filtering on "AD" column will crash app (type incompatibility error)
 - "RESET filters" button clear filters field but do not reset grid (as you would expect when you click Excel's "reset filters")
 - [parquets_lake] Empty values in ANN are shown as '.' (vs null in "single_pq" input)
 - [parquets_lake] Genotypes "0/0" are shown as "blank" but can be filtered as such (not converted for perf considerations)

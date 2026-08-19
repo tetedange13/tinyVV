@@ -17,22 +17,24 @@ if __name__ == "__main__":
     chrom2length = ContigsLength()
     chrom2length.from_path(chrom2length_file)
 
-    # Read header and force str type for all 'ANN_' cols:
-    # Otherwise issues with inferred dtypes for some cols
+    # Read header and force str type on some problematic cols:
+    # Otherwise error with inferred dtypes when parsing CSV
+    problematic_cols = ['dbNSFP_POPMAX_AC']
     header = pl.read_csv(
         inTsv,
         separator="\t",
         has_header=False,
         n_rows=1,
     ).transpose()['column_0'].to_list()
-    schema_override = {c:pl.String for c in header if c.startswith('ANN_') or c.startswith('CSQ_')}
+
+    schema_override = {c:pl.String for c in header if c.replace('ANN_', '').replace('CSQ_', '') in problematic_cols}
     schema_override['POS'] = pl.UInt64
 
     annotations = pl.scan_csv(
         inTsv,
-        schema_overrides=schema_override,
         separator="\t",
         null_values=["."],
+        schema_overrides=schema_override,
     )
 
     # Rename columns variantplaner:
