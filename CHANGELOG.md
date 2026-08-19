@@ -31,7 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
-## [0.9.0] - Unreleased
+## [0.9.1] - Unreleased
+
+### ToFix
+
+- Blank/not_blank does not expect value -> crash
+- Some cols are still col-wise filtrable (eg: occurr, DP)
+
+<br>
+
+## [0.9.0] - 2026-08-19
 
 ### Fixed
 
