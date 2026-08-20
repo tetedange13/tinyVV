@@ -33,13 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.1] - Unreleased
 
-### ToFix
-
-- Blank/not_blank does not expect value -> crash
-
 ### Fixed
 
 - Some columns were still col-wise filtrable (eg: occurr, DP)
+- Blank/not_blank filtering were broken after searchBuilder update
 
 <br>
 
