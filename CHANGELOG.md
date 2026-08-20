@@ -31,13 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
-## [0.9.1] - Unreleased
+## [0.9.1] - 2026-08-20
 
 ### Fixed
 
 - Some columns were still col-wise filtrable (eg: occurr, DP)
 - Blank/not_blank filtering were broken after searchBuilder update
 - Some French left
+- Explicited filtering on number columns typed as "string" by Polars (eg: gnomAD freq) : It actually works (native Polars functionnality, which looks like a bug)
 
 <br>
 
