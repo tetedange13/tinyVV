@@ -243,8 +243,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
                             {"label": "Less than or equal to", "value": "lessThanOrEqual"},
                             {"label": "Starts with", "value": "startsWith"},
                             {"label": "Ends with", "value": "endsWith"},
-                            {"label": "Blank", "value": "isEmpty"},
-                            {"label": "Not blank", "value": "isNotEmpty"},
+                            {"label": "Blank", "value": "blank"},
+                            {"label": "Not blank", "value": "notBlank"},
                         ],
                         placeholder="Condition",
                         style={"width": "180px", "display": "inline-block", "marginRight": "10px"}
@@ -374,8 +374,8 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
         prevent_initial_call=True,
     )
     def add_filter(n_clicks, logic, col, op, val, stored_filters):
-        if not col or not op or (val is None and op not in ["isEmpty", "isNotEmpty"]):
-            return html.Div("Veuillez remplir tous les champs.", style={"color": "red"}), stored_filters
+        if not col or not op or (val is None and op not in ["blank", "notBlank"]):
+            return html.Div("Please fill all fields before applying filter.", style={"color": "red"}), stored_filters
 
         new_filter = {"logic": logic, "column": col, "operator": op, "value": val}
         stored_filters = stored_filters or []

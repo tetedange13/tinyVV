@@ -114,7 +114,7 @@ python -m tinyvv \
 
 ## Limitations / Known issues
 - Parquet inputs (single or as lake) should be provided as command-line argument
-- Most columns are filtered as they were "text" (including gnomAD freq for eg.)
+- Some columns are wrongly typed as "text" by Polars (eg: gnomAD freq). Unexpectedly they can be filtered as number even though (eg: "freq<0.01"), but only because Polars allows 2 strings to be compared as numbers `"123"<"5"` (cannot say if a feature or a bug ?)
 - Sorting by a column is possible through companion YAML, but you better be sorting your parquet beforehand (heavy in memory for large datasets)
 - VCF filenames cannot contain "." symbol (except for the extension)
 - When filtering, infinite scroll continues past filtered rows (with empty rows)
