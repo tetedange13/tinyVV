@@ -375,7 +375,7 @@ dagcomponentfuncs.chrPosRefAltLink = function (props) {
     )
     def add_filter(n_clicks, logic, col, op, val, stored_filters):
         if not col or not op or (val is None and op not in ["blank", "notBlank"]):
-            return html.Div("Veuillez remplir tous les champs.", style={"color": "red"}), stored_filters
+            return html.Div("Please fill all fields before applying filter.", style={"color": "red"}), stored_filters
 
         new_filter = {"logic": logic, "column": col, "operator": op, "value": val}
         stored_filters = stored_filters or []
