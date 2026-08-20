@@ -36,7 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ToFix
 
 - Blank/not_blank does not expect value -> crash
-- Some cols are still col-wise filtrable (eg: occurr, DP)
+
+### Fixed
+
+- Some columns were still col-wise filtrable (eg: occurr, DP)
 
 <br>
 

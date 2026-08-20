@@ -63,6 +63,7 @@ def style_columns(is_config_OK, conf_dict, wanted_cols_list, number_cols):
     # Set "filterType=agNumberColumnFilter" for all "number_cols":
     for a_col in number_cols:
         pre_columnDefs[a_col]["filter"] = "agNumberColumnFilter"
+        pre_columnDefs[a_col]["suppressHeaderFilterButton"] = True
 
     # Deduce GT cols from wanted_cols (assume order is preserved):
     GT_cols = [ c for c in wanted_cols_list if c.endswith('_GT') ]
@@ -86,11 +87,13 @@ def style_columns(is_config_OK, conf_dict, wanted_cols_list, number_cols):
     # Change filterType of 'sort' column:
     if is_config_OK and "sort" in conf_dict.keys():
         pre_columnDefs[conf_dict["sort"][0]]["filter"] = "agNumberColumnFilter"
+        pre_columnDefs[conf_dict["sort"][0]]["suppressHeaderFilterButton"] = True
 
     # Change filterType of relevant 'FORMAT' column:
     nb_format_cols = GQ_cols + DP_cols + AB_cols
     for fmt_col in nb_format_cols:
         pre_columnDefs[fmt_col]["filter"] = "agNumberColumnFilter"
+        pre_columnDefs[fmt_col]["suppressHeaderFilterButton"] = True
     # Disable filtering on 'AD' cols (dtype incompat):
     for fmt_col in AD_cols:
         pre_columnDefs[fmt_col]["filter"] = False
@@ -98,6 +101,7 @@ def style_columns(is_config_OK, conf_dict, wanted_cols_list, number_cols):
     # Change filterType of 'occurrence' column (if defined):
     if 'occurrence' in pre_columnDefs.keys():
         pre_columnDefs["occurrence"]["filter"] = "agNumberColumnFilter"
+        pre_columnDefs["occurrence"]["suppressHeaderFilterButton"] = True
         pre_columnDefs["occurrence"]["width"] = 100
         # Init "agg_in_tooltip" key if NO conf (parquets_lake case):
         if "agg_in_tooltip" not in conf_dict.keys():
@@ -108,6 +112,7 @@ def style_columns(is_config_OK, conf_dict, wanted_cols_list, number_cols):
     # Change filterType of 'id' column (if defined):
     if 'id' in pre_columnDefs.keys():
         pre_columnDefs["id"]["filter"] = "agNumberColumnFilter"
+        pre_columnDefs["id"]["suppressHeaderFilterButton"] = True
 
     # Add tooltips:
     # First add 'FORMAT' cols
